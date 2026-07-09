@@ -32,7 +32,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build Windows EXE
-        run: yarn electron:build:win
+        run: yarn electron:build:win --publish never
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
