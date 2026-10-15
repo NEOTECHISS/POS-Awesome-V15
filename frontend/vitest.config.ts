@@ -1,15 +1,14 @@
-import { defineConfig } from "vitest/config";
-import vue from "@vitejs/plugin-vue";
-import { fileURLToPath } from "node:url";
+import { mergeConfig } from "vite";
+import viteConfig from "./vite.config.js";
 
-// Tests compile real Vue templates, without build-only style writes or
-// production/browser defines from the Frappe bundle configuration.
-export default defineConfig({
-	plugins: [vue()],
-	resolve: {
-		alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
-	},
-	define: { __BUILD_VERSION__: JSON.stringify("test") },
+const testViteConfig = {
+	...viteConfig,
+	// The Frappe style extractor writes beside source files during transforms.
+	// Keep the existing compiler configuration, but never write build CSS in tests.
+	plugins: viteConfig.plugins.filter((plugin) => plugin.name !== "frappe-vue-style"),
+};
+
+export default mergeConfig(testViteConfig, {
 	test: {
 		include: [
 			"tests/**/*.spec.{js,ts}",

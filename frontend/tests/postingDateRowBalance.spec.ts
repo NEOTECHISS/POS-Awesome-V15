@@ -41,12 +41,10 @@ const mountBalance = (balance: any, loading = false, show = true) => {
 				VCol: Box,
 				VChip: Box,
 				VTooltip: Tooltip,
-			},
-			stubs: {
-				VSelect: true,
-				VIcon: true,
-				VSkeletonLoader: true,
-				VueDatePicker: true,
+				VSelect: Box,
+				VIcon: Box,
+				VSkeletonLoader: Box,
+				VueDatePicker: Box,
 			},
 		},
 	});
