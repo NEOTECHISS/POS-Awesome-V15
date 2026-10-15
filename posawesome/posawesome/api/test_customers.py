@@ -241,13 +241,13 @@ class TestCustomerBalance(unittest.TestCase):
         sys.modules.clear()
         sys.modules.update(self._orig_sys_modules)
 
-    def test_unavailable_native_summary_is_not_zero_or_an_error(self):
+    def test_unavailable_native_summary_does_not_disclose_customer_name(self):
         self.dashboard.return_value = None
 
         result = self.module.get_customer_balance("CUST-A", "Company A")
 
         self.assertEqual(result, {
-            "balance": None, "customer_name": "Test Customer", "currency": None,
+            "balance": None, "customer_name": None, "currency": None,
         })
         self.dashboard.assert_called_once_with("Customer", "CUST-A")
         self.module.frappe.log_error.assert_not_called()
@@ -268,15 +268,17 @@ class TestCustomerBalance(unittest.TestCase):
         for summary in ([], [{"company": "Other Company", "total_unpaid": 999}]):
             with self.subTest(summary=summary):
                 self.dashboard.return_value = summary
-                self.assertIsNone(
-                    self.module.get_customer_balance("CUST-A", "Company A")["balance"]
+                self.assertEqual(
+                    self.module.get_customer_balance("CUST-A", "Company A"),
+                    {"balance": None, "customer_name": "Test Customer", "currency": None},
                 )
         self.module.frappe.log_error.assert_not_called()
 
     def test_missing_company_balance_is_not_an_explicit_zero(self):
         self.dashboard.return_value = [{"company": "Company A", "currency": "USD"}]
-        self.assertIsNone(
-            self.module.get_customer_balance("CUST-A", "Company A")["balance"]
+        self.assertEqual(
+            self.module.get_customer_balance("CUST-A", "Company A"),
+            {"balance": None, "customer_name": "Test Customer", "currency": "USD"},
         )
 
     def test_unexpected_native_failure_is_logged_and_unavailable(self):
