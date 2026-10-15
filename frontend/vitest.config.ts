@@ -1,7 +1,15 @@
-import { mergeConfig } from "vite";
-import viteConfig from "./vite.config.js";
+import { defineConfig } from "vitest/config";
+import vue from "@vitejs/plugin-vue";
+import { fileURLToPath } from "node:url";
 
-export default mergeConfig(viteConfig, {
+// Tests compile real Vue templates, without build-only style writes or
+// production/browser defines from the Frappe bundle configuration.
+export default defineConfig({
+	plugins: [vue()],
+	resolve: {
+		alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+	},
+	define: { __BUILD_VERSION__: JSON.stringify("test") },
 	test: {
 		include: [
 			"tests/**/*.spec.{js,ts}",
