@@ -217,7 +217,7 @@ def get_customer_balance(customer, company=None):
 
         return {
             "balance": balance,
-            "customer_name": customer_name,
+            "customer_name": customer_name if dashboard_info is not None else None,
             "currency": company_data[0].get("currency") if company_data else None,
         }
     except Exception as e:
