@@ -143,8 +143,8 @@ function defaultOfflineHTML(invoice: any, terms = "") {
         table { width: 100%; border-collapse: collapse; }
         th, td { font-size: 12px; padding: 4px 0; border-bottom: 1px dashed #ccc; }
         th { text-align: left; }
-        td.qty, td.rate, td.amount { text-align: right; }
-        table.totals td { border-bottom: none; }
+        td.qty, td.rate, td.amount { text-align: right; white-space: nowrap; }
+        table.totals td { border-bottom: none; white-space: nowrap; }
         .terms { margin-top: 8px; font-size: 10px; }
         .footer { text-align: center; margin-top: 8px; font-size: 11px; }
     </style>

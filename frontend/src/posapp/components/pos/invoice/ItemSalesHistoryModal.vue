@@ -1195,4 +1195,10 @@ watch(historyRows, () => {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 }
+
+@media (max-width: 420px) {
+	.posa-item-history-summary {
+		grid-template-columns: 1fr;
+	}
+}
 </style>

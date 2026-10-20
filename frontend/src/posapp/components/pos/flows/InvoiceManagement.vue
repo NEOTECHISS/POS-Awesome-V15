@@ -4159,6 +4159,7 @@ export default {
 	font-size: 1.08rem;
 	font-weight: 800;
 	line-height: 1.25;
+	white-space: nowrap;
 }
 
 .summary-tile__meta {
@@ -4351,6 +4352,7 @@ export default {
 	margin-top: 6px;
 	font-size: 1.1rem;
 	font-weight: 800;
+	white-space: nowrap;
 }
 
 .invoice-record-card__content {
@@ -4442,6 +4444,7 @@ export default {
 	font-size: 0.92rem;
 	font-weight: 700;
 	line-height: 1.35;
+	white-space: nowrap;
 }
 
 .meta-pair__value--success {

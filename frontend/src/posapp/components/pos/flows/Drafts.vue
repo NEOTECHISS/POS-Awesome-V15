@@ -52,9 +52,13 @@
 												}}</strong>
 												<span>{{ item.name }}</span>
 											</div>
-											<div class="drafts-dialog-item__amount">
-												{{ currencySymbol(item.currency) }}
-												{{ formatCurrency(item.grand_total) }}
+											<div class="drafts-dialog-item__amount posa-price-line">
+												<span class="currency-symbol">{{
+													currencySymbol(item.currency)
+												}}</span>
+												<span class="amount-value">{{
+													formatCurrency(item.grand_total)
+												}}</span>
 											</div>
 										</div>
 										<div class="drafts-dialog-item__meta">
@@ -94,8 +98,14 @@
 										{{ item.posting_time.split(".")[0] }}
 									</template>
 									<template v-slot:item.grand_total="{ item }">
-										{{ currencySymbol(item.currency) }}
-										{{ formatCurrency(item.grand_total) }}
+										<span class="posa-price-line">
+											<span class="currency-symbol">{{
+												currencySymbol(item.currency)
+											}}</span>
+											<span class="amount-value">{{
+												formatCurrency(item.grand_total)
+											}}</span>
+										</span>
 									</template>
 								</v-data-table>
 							</v-col>
@@ -410,9 +420,11 @@ export default {
 }
 
 .drafts-dialog-item__amount {
+	flex: 0 0 auto;
 	font-weight: 700;
 	font-size: 1rem;
 	text-align: right;
+	white-space: nowrap;
 }
 
 .drafts-dialog-item__meta {

@@ -1051,7 +1051,18 @@ defineExpose({
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	gap: 8px;
 	margin-bottom: 2px;
+}
+
+.payment-detail-row > span:first-child {
+	min-width: 0;
+}
+
+.payment-detail-row > span:last-child,
+.pay-sidebar .text-end,
+.pay-sidebar .text-end > div {
+	white-space: nowrap;
 }
 
 .payment-detail-row:last-child {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	DATA_TABLE_EXPAND_COLUMN,
 	buildFinalVisibleColumns,
+	getItemSelectorVisibleHeaders,
 	getResponsiveVisibleHeaders,
 } from "../src/posapp/composables/pos/items/useItemsTableResponsive";
 
@@ -96,5 +97,51 @@ describe("items table final visible columns", () => {
 			"actions",
 			"data-table-expand",
 		]);
+	});
+
+	it("prioritizes name, rate and stock in the compact item picker", () => {
+		const pickerHeaders = [
+			{ key: "item_name", title: "Name" },
+			{ key: "item_code", title: "Code" },
+			{ key: "rate", title: "Rate" },
+			{ key: "actual_qty", title: "Available QTY" },
+			{ key: "stock_uom", title: "UOM" },
+		];
+
+		const compact = getItemSelectorVisibleHeaders(pickerHeaders, 360);
+
+		expect(compact.map((column) => column.key)).toEqual([
+			"item_name",
+			"rate",
+			"actual_qty",
+		]);
+		expect(compact.find((column) => column.key === "item_name")?.minWidth).toBe(0);
+		expect(compact.find((column) => column.key === "rate")).toMatchObject({
+			align: "end",
+			width: 112,
+			minWidth: 112,
+			nowrap: true,
+		});
+		expect(compact.find((column) => column.key === "actual_qty")).toMatchObject({
+			title: "Qty",
+			align: "end",
+			width: 80,
+			minWidth: 80,
+			nowrap: true,
+		});
+	});
+
+	it("does not hide picker columns when the container is wide", () => {
+		const pickerHeaders = [
+			{ key: "item_name", title: "Name" },
+			{ key: "item_code", title: "Code" },
+			{ key: "rate", title: "Rate" },
+			{ key: "actual_qty", title: "Available QTY" },
+			{ key: "stock_uom", title: "UOM" },
+		];
+
+		expect(getItemSelectorVisibleHeaders(pickerHeaders, 900)).toEqual(
+			pickerHeaders,
+		);
 	});
 });

@@ -32,12 +32,31 @@
 					>
 						<strong>{{ __("Exchange settlement") }}</strong>
 						<span>
-							{{ __("Replacement sale") }} {{ currencySymbol(invoice_doc.currency)
-							}}{{ formatCurrency(invoice_doc.rounded_total || invoice_doc.grand_total) }} •
-							{{ __("Return credit") }} {{ currencySymbol(invoice_doc.currency)
-							}}{{ formatCurrency(exchangeSession.returnTotal) }} •
-							{{ exchangeSettlementLabel }} {{ currencySymbol(invoice_doc.currency)
-							}}{{ formatCurrency(exchangeSettlementAmount) }}
+							{{ __("Replacement sale") }}
+							<span class="posa-price-line">
+								<span class="currency-symbol">{{ currencySymbol(invoice_doc.currency) }}</span>
+								<span class="amount-value">{{
+									formatCurrency(
+										invoice_doc.rounded_total || invoice_doc.grand_total,
+									)
+								}}</span>
+							</span>
+							•
+							{{ __("Return credit") }}
+							<span class="posa-price-line">
+								<span class="currency-symbol">{{ currencySymbol(invoice_doc.currency) }}</span>
+								<span class="amount-value">{{
+									formatCurrency(exchangeSession.returnTotal)
+								}}</span>
+							</span>
+							•
+							{{ exchangeSettlementLabel }}
+							<span class="posa-price-line">
+								<span class="currency-symbol">{{ currencySymbol(invoice_doc.currency) }}</span>
+								<span class="amount-value">{{
+									formatCurrency(exchangeSettlementAmount)
+								}}</span>
+							</span>
 						</span>
 					</v-alert>
 					<section class="payment-section payment-section--summary">

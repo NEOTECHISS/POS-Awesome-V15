@@ -10,9 +10,9 @@
 			<v-col md="5" cols="12">
 				<p v-if="totalSelected" class="golden--text text-end">
 					<span>{{ __("Total Selected :") }}</span>
-					<span>
-						{{ currencySymbol(posProfile.currency) }}
-						{{ formatCurrency(totalSelected) }}
+					<span class="posa-price-line">
+						<span class="currency-symbol">{{ currencySymbol(posProfile.currency) }}</span>
+						<span class="amount-value">{{ formatCurrency(totalSelected) }}</span>
 					</span>
 					<small>({{ selectedCount }} invoice(s))</small>
 				</p>
@@ -121,16 +121,24 @@
 				</v-checkbox>
 			</template>
 			<template v-slot:item.invoice_amount="{ item }">
-				{{ currencySymbol(item.currency) }}
-				{{ formatCurrency(item.invoice_amount) }}
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ currencySymbol(item.currency) }}</span>
+					<span class="amount-value">{{ formatCurrency(item.invoice_amount) }}</span>
+				</span>
 			</template>
 			<template v-slot:item.outstanding_amount="{ item }">
-				<span class="text-primary"
-					>{{
+				<span class="text-primary posa-price-line">
+					<span class="currency-symbol">{{
 						currencySymbol(item?.currency || posProfile.currency)
-					}}
-					{{ formatCurrency(item?.outstanding_amount_in_invoice_currency ?? item?.outstanding_amount ?? 0) }}</span
-				>
+					}}</span>
+					<span class="amount-value">{{
+						formatCurrency(
+							item?.outstanding_amount_in_invoice_currency ??
+								item?.outstanding_amount ??
+								0,
+						)
+					}}</span>
+				</span>
 			</template>
 		</v-data-table>
 		<v-divider></v-divider>

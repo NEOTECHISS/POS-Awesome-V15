@@ -267,6 +267,7 @@ const formatDraftAge = (draft) => {
 .drafts-rail__chip-meta {
 	font-size: 0.8rem;
 	color: var(--pos-text-secondary);
+	white-space: nowrap;
 }
 
 @media (max-width: 768px) {

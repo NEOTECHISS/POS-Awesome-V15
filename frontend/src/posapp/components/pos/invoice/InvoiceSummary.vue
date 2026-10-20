@@ -891,6 +891,7 @@ defineExpose({
 	line-height: 1.1;
 	font-variant-numeric: tabular-nums;
 	color: var(--pos-text-primary);
+	white-space: nowrap;
 }
 
 .summary-hero__meta {
@@ -899,6 +900,10 @@ defineExpose({
 	gap: 8px 14px;
 	font-size: 0.84rem;
 	color: var(--pos-text-secondary);
+}
+
+.summary-hero__meta > span {
+	white-space: nowrap;
 }
 
 .summary-hero__field-wrap {

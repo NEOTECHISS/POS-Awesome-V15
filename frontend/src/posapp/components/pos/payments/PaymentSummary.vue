@@ -240,6 +240,7 @@ const baseSettlementLabel = computed(() => {
 	font-size: 0.95rem;
 	font-variant-numeric: tabular-nums;
 	color: var(--pos-text-primary);
+	white-space: nowrap;
 }
 
 .exchange-settlement__part--result strong {
@@ -372,6 +373,7 @@ const baseSettlementLabel = computed(() => {
 	font-size: 1.05rem;
 	font-weight: 700;
 	color: var(--pos-text-primary);
+	white-space: nowrap;
 }
 
 .payment-summary-pill__meta {

@@ -35,33 +35,51 @@
 				></v-text-field>
 			</template>
 			<template v-slot:item.difference_in_currency="{ item }">
-				{{ currencySymbol(item.currency) }}
-				{{ formatCurrency(calculateDifference(item)) }}
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ currencySymbol(item.currency) }}</span>
+					<span class="amount-value">{{ formatCurrency(calculateDifference(item)) }}</span>
+				</span>
 			</template>
 			<template v-slot:item.company_difference="{ item }">
-				{{ companyCurrencySymbol }}
-				{{ formatCurrency(calculateCompanyDifference(item)) }}
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ companyCurrencySymbol }}</span>
+					<span class="amount-value">{{
+						formatCurrency(calculateCompanyDifference(item))
+					}}</span>
+				</span>
 			</template>
 			<template v-slot:item.opening_amount="{ item }">
-				{{ companyCurrencySymbol }}
-				{{ formatCurrency(item.opening_amount) }}</template
-			>
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ companyCurrencySymbol }}</span>
+					<span class="amount-value">{{ formatCurrency(item.opening_amount) }}</span>
+				</span>
+			</template>
 			<template v-slot:item.expected_amount="{ item }">
-				{{ companyCurrencySymbol }}
-				{{ formatCurrency(item.expected_amount) }}</template
-			>
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ companyCurrencySymbol }}</span>
+					<span class="amount-value">{{ formatCurrency(item.expected_amount) }}</span>
+				</span>
+			</template>
 			<template v-slot:item.variance_percent="{ item }">
 				<span :class="['variance-chip', varianceClass(item)]">
 					{{ formatVariancePercent(item) }}
 				</span>
 			</template>
 			<template v-slot:item.opening_amount_in_currency="{ item }">
-				{{ currencySymbol(item.currency) }}
-				{{ formatCurrency(item.opening_amount_in_currency) }}
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ currencySymbol(item.currency) }}</span>
+					<span class="amount-value">{{
+						formatCurrency(item.opening_amount_in_currency)
+					}}</span>
+				</span>
 			</template>
 			<template v-slot:item.expected_amount_in_currency="{ item }">
-				{{ currencySymbol(item.currency) }}
-				{{ formatCurrency(item.expected_amount_in_currency) }}
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ currencySymbol(item.currency) }}</span>
+					<span class="amount-value">{{
+						formatCurrency(item.expected_amount_in_currency)
+					}}</span>
+				</span>
 			</template>
 		</v-data-table>
 	</div>

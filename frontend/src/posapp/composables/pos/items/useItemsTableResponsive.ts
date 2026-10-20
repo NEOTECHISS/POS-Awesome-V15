@@ -92,6 +92,77 @@ export function getResponsiveVisibleHeaders(
 	}));
 }
 
+export const ITEM_SELECTOR_COMPACT_WIDTH = 640;
+const ITEM_SELECTOR_COMPACT_COLUMNS = ["item_name", "rate", "actual_qty"] as const;
+const ITEM_SELECTOR_COMPACT_RATE_WIDTH = 112;
+const ITEM_SELECTOR_COMPACT_QTY_WIDTH = 80;
+
+const itemSelectorColumnTitle = (header: TableHeader) => {
+	if (header.key !== "actual_qty") {
+		return header.title;
+	}
+	const translate = (globalThis as { __?: (_value: string) => string }).__;
+	return translate ? translate("Qty") : "Qty";
+};
+
+/**
+ * Responsive columns for the item picker (not the cart).
+ *
+ * The picker is a browse/search surface: name, rate and available quantity are
+ * the only columns needed on a phone. Hiding code/UOM frees enough width for
+ * the full rate so the currency symbol and amount never wrap.
+ */
+export function getItemSelectorVisibleHeaders(
+	headers: TableHeader[],
+	width: number,
+) {
+	const compact = width > 0 && width < ITEM_SELECTOR_COMPACT_WIDTH;
+	if (!compact) {
+		return headers;
+	}
+
+	return headers
+		.filter(
+			(header) =>
+				header.required ||
+				ITEM_SELECTOR_COMPACT_COLUMNS.includes(
+					header.key as (typeof ITEM_SELECTOR_COMPACT_COLUMNS)[number],
+				),
+		)
+		.map((header) => {
+			if (header.key === "item_name") {
+				return {
+					...header,
+					width: undefined,
+					minWidth: 0,
+				};
+			}
+
+			if (header.key === "rate") {
+				return {
+					...header,
+					align: "end" as const,
+					width: ITEM_SELECTOR_COMPACT_RATE_WIDTH,
+					minWidth: ITEM_SELECTOR_COMPACT_RATE_WIDTH,
+					nowrap: true,
+				};
+			}
+
+			if (header.key === "actual_qty") {
+				return {
+					...header,
+					title: itemSelectorColumnTitle(header),
+					align: "end" as const,
+					width: ITEM_SELECTOR_COMPACT_QTY_WIDTH,
+					minWidth: ITEM_SELECTOR_COMPACT_QTY_WIDTH,
+					nowrap: true,
+				};
+			}
+
+			return header;
+		});
+}
+
 export function buildFinalVisibleColumns(
 	headers: TableHeader[],
 	width: number,

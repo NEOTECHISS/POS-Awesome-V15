@@ -210,9 +210,13 @@
 											<strong>{{ item.customer }}</strong>
 											<span>{{ item.name }}</span>
 										</div>
-										<div class="returns-result-card__amount">
-											{{ currencySymbol(item.currency)
-											}}{{ formatCurrency(item.grand_total) }}
+										<div class="returns-result-card__amount posa-price-line">
+											<span class="currency-symbol">{{
+												currencySymbol(item.currency)
+											}}</span>
+											<span class="amount-value">{{
+												formatCurrency(item.grand_total)
+											}}</span>
 										</div>
 									</div>
 									<div class="returns-result-card__meta">
@@ -282,8 +286,14 @@
 									</div>
 								</template>
 								<template v-slot:item.grand_total="{ item }">
-									{{ currencySymbol(item.currency) }}
-									{{ formatCurrency(item.grand_total) }}
+									<span class="posa-price-line">
+										<span class="currency-symbol">{{
+											currencySymbol(item.currency)
+										}}</span>
+										<span class="amount-value">{{
+											formatCurrency(item.grand_total)
+										}}</span>
+									</span>
 								</template>
 							</v-data-table>
 
@@ -986,6 +996,7 @@ export default {
 }
 
 .returns-result-card__amount {
+	flex: 0 0 auto;
 	font-weight: 700;
 	white-space: nowrap;
 }
@@ -1077,7 +1088,8 @@ export default {
 	}
 
 	.returns-result-card__amount {
-		white-space: normal;
+		align-self: flex-start;
+		white-space: nowrap;
 	}
 
 	.returns-card__subtitle {

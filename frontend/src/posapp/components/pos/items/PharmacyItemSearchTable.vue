@@ -120,15 +120,15 @@
 					{{ cleanPharmacyText(item.retailmind_old_pos_generic_name || item.generic_name) || "-" }}
 				</template>
 				<template #item.rate="{ item }">
-					<span class="pharmacy-rate-cell">
-						{{ currencySymbol(priceCurrency(item)) }}
-						{{
+					<span class="pharmacy-rate-cell posa-price-line">
+						<span class="currency-symbol">{{ currencySymbol(priceCurrency(item)) }}</span>
+						<span class="amount-value">{{
 							formatCurrency(
 								resolveRetailPrice(item),
 								priceCurrency(item),
 								ratePrecision(resolveRetailPrice(item)),
 							)
-						}}
+						}}</span>
 					</span>
 				</template>
 				<template #item.rack="{ item }">
@@ -745,8 +745,11 @@ defineExpose({ tableRef, syncRenderedHighlight, focusActiveResult });
 }
 
 .pharmacy-rate-cell {
+	justify-content: flex-end;
+	min-width: max-content;
 	font-weight: 700;
 	color: var(--pos-text-primary);
+	white-space: nowrap;
 }
 
 @media (max-width: 1100px) {

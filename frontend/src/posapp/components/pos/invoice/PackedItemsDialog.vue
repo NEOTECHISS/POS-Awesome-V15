@@ -40,7 +40,7 @@
 						{{ formatFloat(item.qty) }}
 					</template>
 					<template v-slot:item.rate="{ item }">
-						<div class="currency-display">
+						<div class="currency-display posa-price-line">
 							<span class="currency-symbol">{{ currencySymbol(displayCurrency) }}</span>
 							<span class="amount-value">{{ formatCurrency(item.rate) }}</span>
 						</div>

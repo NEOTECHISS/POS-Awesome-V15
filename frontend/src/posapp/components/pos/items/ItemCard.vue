@@ -302,6 +302,7 @@ const onDragEnd = (event) => {
 
 .card-item-details {
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	align-items: flex-start;
 	margin-top: auto; /* Push to bottom */
@@ -310,31 +311,44 @@ const onDragEnd = (event) => {
 
 .card-item-price {
 	display: flex;
+	flex: 1 1 auto;
 	flex-direction: column;
 	gap: var(--pos-space-1);
-	min-width: 0;
+	min-width: max-content;
 }
 
 .primary-price {
 	display: flex;
 	align-items: baseline;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	gap: var(--pos-space-1);
 	font-weight: 750;
 	color: var(--pos-primary);
 	font-size: 1.08rem;
 	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
 }
 
 .primary-price .currency-symbol,
 .secondary-price .currency-symbol {
 	font-size: calc(1em + 2px);
 	line-height: 1;
+	flex: 0 0 auto;
+}
+
+.price-amount {
+	flex: 0 0 auto;
+	white-space: nowrap;
 }
 
 .secondary-price {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: nowrap;
+	gap: var(--pos-space-1);
 	font-size: 0.8rem;
 	color: var(--pos-text-secondary);
+	white-space: nowrap;
 }
 
 .card-item-stock {
@@ -345,6 +359,7 @@ const onDragEnd = (event) => {
 	flex-direction: row;
 	align-items: flex-end;
 	gap: 6px;
+	margin-left: auto;
 	padding: 6px 8px;
 	border-radius: var(--pos-radius-xs);
 	border: 1px solid var(--pos-border-light);

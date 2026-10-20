@@ -1,5 +1,5 @@
 <template>
-	<div class="items-table-container">
+	<div ref="containerRef" class="items-table-container">
 		<v-data-table-virtual
 			ref="tableRef"
 			:headers="effectiveHeaders"
@@ -10,6 +10,7 @@
 			fixed-header
 			height="100%"
 			:header-props="headerProps"
+			:cell-props="getCellProps"
 			:no-data-text="noDataText"
 			@click:row="handleRowClick"
 			:item-class="itemClass"
@@ -29,7 +30,7 @@
 			<template v-slot:item.rate="{ item }">
 				<div v-if="context !== 'purchase'">
 					<div class="text-primary rate-cell-primary">
-						<div>
+						<span class="posa-price-line rate-value">
 							<span class="currency-symbol">{{
 								currencySymbol(
 									item.original_currency ||
@@ -38,7 +39,7 @@
 										posProfile.currency,
 								)
 							}}</span>
-							{{
+							<span class="amount-value">{{
 								formatCurrency(
 									item.original_rate ?? item.rate ?? 0,
 									item.original_currency ||
@@ -47,8 +48,8 @@
 										posProfile.currency,
 									ratePrecision(item.original_rate ?? item.rate ?? 0),
 								)
-							}}
-						</div>
+							}}</span>
+						</span>
 						<ItemRateInfoMenu
 							v-if="showRateInfo"
 							:rate-info="getItemRateInfo(item)"
@@ -67,21 +68,23 @@
 									item.price_list_currency ||
 									posProfile.currency)
 						"
-						class="text-success"
+						class="text-success rate-secondary"
 					>
-						<span class="currency-symbol">{{ currencySymbol(selectedCurrency) }}</span>
-						{{
-							formatCurrency(
-								secondaryRate(item),
-								selectedCurrency,
-								ratePrecision(secondaryRate(item)),
-							)
-						}}
+						<span class="posa-price-line">
+							<span class="currency-symbol">{{ currencySymbol(selectedCurrency) }}</span>
+							<span class="amount-value">{{
+								formatCurrency(
+									secondaryRate(item),
+									selectedCurrency,
+									ratePrecision(secondaryRate(item)),
+								)
+							}}</span>
+						</span>
 					</div>
 				</div>
 				<div v-else>
 					<div class="text-primary rate-cell-primary">
-						<div>
+						<span class="posa-price-line rate-value">
 							<span class="currency-symbol">{{
 								currencySymbol(
 									item.original_currency ||
@@ -90,7 +93,7 @@
 										posProfile.currency,
 								)
 							}}</span>
-							{{
+							<span class="amount-value">{{
 								formatCurrency(
 									item.original_rate ?? item.rate ?? item.standard_rate ?? 0,
 									item.original_currency ||
@@ -99,8 +102,8 @@
 										posProfile.currency,
 									ratePrecision(item.original_rate ?? item.rate ?? item.standard_rate ?? 0),
 								)
-							}}
-						</div>
+							}}</span>
+						</span>
 						<ItemRateInfoMenu
 							v-if="showRateInfo"
 							:rate-info="getItemRateInfo(item)"
@@ -121,9 +124,10 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from "vue";
+import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from "vue";
 import ItemRateInfoMenu from "./ItemRateInfoMenu.vue";
 import { priceListToSelectedCurrency } from "../../../utils/erpnextCurrency";
+import { getItemSelectorVisibleHeaders } from "../../../composables/pos/items/useItemsTableResponsive";
 
 const props = defineProps({
 	displayedItems: { type: Array, default: () => [] },
@@ -152,9 +156,44 @@ const props = defineProps({
 
 const emit = defineEmits(["row-click", "list-scroll", "toggle-selection", "select-all"]);
 
+const containerRef = ref(null);
+const containerWidth = ref(0);
+let resizeObserver = null;
+
+const responsiveHeaders = computed(() =>
+	getItemSelectorVisibleHeaders(props.headers, containerWidth.value),
+);
+
 const effectiveHeaders = computed(() => {
-	if (!props.multiSelect) return props.headers;
-	return [{ key: "item-select", title: "", sortable: false, width: "48px" }, ...props.headers];
+	if (!props.multiSelect) return responsiveHeaders.value;
+	return [
+		{ key: "item-select", title: "", sortable: false, width: 48, minWidth: 48 },
+		...responsiveHeaders.value,
+	];
+});
+
+const getCellProps = ({ column }) => ({
+	class: `posa-item-cell posa-item-cell--${column?.key || "unknown"}`,
+});
+
+const updateContainerWidth = () => {
+	const width = containerRef.value?.clientWidth || 0;
+	if (width > 0) {
+		containerWidth.value = width;
+	}
+};
+
+onMounted(() => {
+	updateContainerWidth();
+	if (typeof ResizeObserver !== "undefined" && containerRef.value) {
+		resizeObserver = new ResizeObserver(updateContainerWidth);
+		resizeObserver.observe(containerRef.value);
+	}
+});
+
+onBeforeUnmount(() => {
+	resizeObserver?.disconnect();
+	resizeObserver = null;
 });
 
 function isItemSelected(item) {
@@ -301,11 +340,23 @@ defineExpose({ scrollToIndex, getTableElement, tableRef });
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.rate-value {
+	flex: 0 0 auto;
+}
+
+.rate-secondary {
+	margin-top: 2px;
+	font-size: 0.86em;
 }
 
 .currency-symbol {
 	font-size: calc(1em + 2px);
 	line-height: 1;
+	flex: 0 0 auto;
 }
 
 .sleek-data-table {
@@ -414,4 +465,35 @@ defineExpose({ scrollToIndex, getTableElement, tableRef });
 	-moz-osx-font-smoothing: grayscale;
 	letter-spacing: 0.01em;
 }
+
+@media (max-width: 640px) {
+	.sleek-data-table :deep(table) {
+		table-layout: fixed;
+		width: 100%;
+	}
+
+	.sleek-data-table :deep(.v-table__wrapper > table > thead > tr > th),
+	.sleek-data-table :deep(.v-table__wrapper > table > tbody > tr > td) {
+		padding: 9px 6px;
+	}
+
+	.sleek-data-table :deep(th) {
+		font-size: 0.72rem;
+	}
+
+	.sleek-data-table :deep(.posa-item-cell--item_name) {
+		overflow-wrap: anywhere;
+		white-space: normal;
+	}
+
+	.sleek-data-table :deep(.posa-item-cell--rate) {
+		overflow: visible;
+	}
+
+	.rate-cell-primary {
+		justify-content: flex-end;
+		max-width: none;
+	}
+}
+
 </style>

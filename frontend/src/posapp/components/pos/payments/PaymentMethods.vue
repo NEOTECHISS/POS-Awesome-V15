@@ -399,6 +399,7 @@ const blurTarget = (event) => {
 	margin-top: 6px;
 	font-size: 0.75rem;
 	color: var(--pos-text-secondary);
+	white-space: nowrap;
 }
 
 .payment-currency-equivalent--error {

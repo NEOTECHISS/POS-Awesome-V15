@@ -7,17 +7,21 @@
 					<strong>{{ resolvedSectionTitle }}</strong>
 					<span v-if="totalUnallocated" class="text-primary">
 						{{ __("- Total Unallocated") }} :
-						{{ currencySymbol(posProfile.currency) }}
-						{{ formatCurrency(totalUnallocated) }}
+						<span class="posa-price-line">
+							<span class="currency-symbol">{{ currencySymbol(posProfile.currency) }}</span>
+							<span class="amount-value">{{
+								formatCurrency(totalUnallocated)
+							}}</span>
+						</span>
 					</span>
 				</p>
 			</v-col>
 			<v-col md="5" cols="12">
 				<p v-if="totalSelected" class="golden--text text-end">
 					<span>{{ __("Total Selected :") }}</span>
-					<span>
-						{{ currencySymbol(posProfile.currency) }}
-						{{ formatCurrency(totalSelected) }}
+					<span class="posa-price-line">
+						<span class="currency-symbol">{{ currencySymbol(posProfile.currency) }}</span>
+						<span class="amount-value">{{ formatCurrency(totalSelected) }}</span>
 					</span>
 				</p>
 			</v-col>
@@ -50,13 +54,16 @@
 				</span>
 			</template>
 			<template v-slot:item.paid_amount="{ item }">
-				{{ currencySymbol(item.currency) }}
-				{{ formatCurrency(item.paid_amount) }}
+				<span class="posa-price-line">
+					<span class="currency-symbol">{{ currencySymbol(item.currency) }}</span>
+					<span class="amount-value">{{ formatCurrency(item.paid_amount) }}</span>
+				</span>
 			</template>
 			<template v-slot:item.unallocated_amount="{ item }">
-				<span class="text-primary"
-					>{{ currencySymbol(item.currency) }} {{ formatCurrency(item.unallocated_amount) }}</span
-				>
+				<span class="text-primary posa-price-line">
+					<span class="currency-symbol">{{ currencySymbol(item.currency) }}</span>
+					<span class="amount-value">{{ formatCurrency(item.unallocated_amount) }}</span>
+				</span>
 			</template>
 		</v-data-table>
 		<v-divider></v-divider>

@@ -815,3 +815,36 @@ body[data-page-route="posapp"] #body {
 body[data-page-route="posapp"] .desk-container {
 	padding-left: 0 !important;
 }
+
+/* ==========================================================================
+   Currency + amount line
+   Keeps a currency symbol and its formatted amount on one horizontal line.
+   Use on price containers where the symbol is rendered separately from the
+   amount so narrow mobile columns cannot break the value across two lines.
+   ========================================================================== */
+.posa-price-line {
+	display: inline-flex;
+	align-items: baseline;
+	flex-wrap: nowrap;
+	gap: 0.22em;
+	min-width: 0;
+	max-width: 100%;
+	white-space: nowrap;
+	font-variant-numeric: lining-nums tabular-nums;
+}
+
+.posa-price-line > .currency-symbol,
+.posa-price-line > .price-amount,
+.posa-price-line > .amount-value {
+	flex: 0 0 auto;
+	min-width: 0;
+	white-space: nowrap;
+}
+
+/* Keep the official Riyal glyph available even when a component overrides its
+   inherited font stack. The Riyal face only contains U+20C1, so every other
+   character falls through to the normal POS UI font. */
+.posapp .currency-symbol,
+.posapp .posa-price-line {
+	font-family: "Saudi Riyal", var(--pos-font-sans);
+}
