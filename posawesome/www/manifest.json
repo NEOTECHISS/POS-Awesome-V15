@@ -1,10 +1,19 @@
 {
+  "id": "/app/posapp",
   "name": "POS Awesome",
   "short_name": "POS Awesome",
+  "description": "Offline-capable point of sale for ERPNext.",
   "start_url": "/app/posapp",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#FFFFFF",
   "theme_color": "#0097A7",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/assets/posawesome/icons/logo-512.png",
