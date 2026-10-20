@@ -1,12 +1,12 @@
 <template>
 	<div>
-		<v-card class="selection mx-auto mt-3 pos-themed-card" style="max-height: 80vh; height: 80vh">
+		<v-card class="selection mx-auto mt-3 pos-themed-card" style="max-height: 80dvh; height: 80dvh">
 			<v-card-title>
 				<span class="text-h6 text-primary">{{ __("Offers") }}</span>
 			</v-card-title>
 			<div
 				class="my-0 py-0 overflow-y-auto"
-				style="max-height: 75vh"
+				style="max-height: 75dvh"
 				@mouseover="style = 'cursor: pointer'"
 			>
 				<v-data-table

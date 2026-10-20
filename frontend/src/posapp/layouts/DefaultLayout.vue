@@ -149,6 +149,7 @@ import {
 	validateBootstrapSnapshot,
 } from "../../offline/bootstrapSnapshot";
 import { useRtl } from "../composables/core/useRtl";
+import { useVisualViewport } from "../composables/core/useVisualViewport";
 import { useBootSync } from "../composables/runtime/useBootSync";
 import { useNetworkLifecycle } from "../composables/runtime/useNetworkLifecycle";
 import { useUpdateChecks } from "../composables/runtime/useUpdateChecks";
@@ -219,6 +220,10 @@ const loadingApi = (() => {
 const globalLoading = loadingApi?.overlayVisible || ref(false);
 const getScopeState =
 	typeof loadingApi?.getScopeState === "function" ? loadingApi.getScopeState : createFallbackLoadingScope;
+
+// Shrink the shell to the visual viewport while a mobile keyboard is open.
+useVisualViewport();
+
 const { get_closing_data } = usePosShift();
 const syncStore = useSyncStore();
 const customersStore = useCustomersStore();
@@ -1321,13 +1326,29 @@ const adjust_frappe_sidebar_offset = () => {
 
 <style scoped>
 .container1 {
+	/* Safe-area tokens: 0px on desktop, notch / home-indicator insets on
+	   mobile. They are consumed by .main-content and the app bar below. */
+	--posa-safe-top: env(safe-area-inset-top, 0px);
+	--posa-safe-bottom: env(safe-area-inset-bottom, 0px);
+	/* useVisualViewport only sets --posa-viewport-height while the on-screen
+	   keyboard is open; otherwise the dynamic viewport unit stays in charge. */
+	--posa-shell-height: var(--posa-viewport-height, 100dvh);
+
 	width: 100%;
 	max-width: 100%;
-	min-height: 100dvh;
-	height: 100dvh;
+	height: 100vh;
+	height: var(--posa-shell-height);
+	min-height: 0;
 	overflow: hidden;
 	padding-inline-start: var(--posa-desk-sidebar-width, 0px);
 	box-sizing: border-box;
+}
+
+/* Vuetify pins this wrapper to 100dvh. Let the shell decide instead, so the
+   wrapper can shrink when the on-screen keyboard reduces the visual viewport. */
+.container1 :deep(.v-application__wrap) {
+	min-height: 0;
+	height: 100%;
 }
 
 .main-content {
@@ -1336,8 +1357,19 @@ const adjust_frappe_sidebar_offset = () => {
 	min-width: 0;
 	min-height: 0;
 	height: 100%;
+	flex: 1 1 auto;
 	display: flex;
 	flex-direction: column;
+	box-sizing: border-box;
+	/* Vuetify reserves --v-layout-top for the app bar; add the notch inset so
+	   the first row of content clears the status bar area. */
+	padding-top: calc(var(--v-layout-top, 0px) + var(--posa-safe-top));
+	padding-bottom: var(--posa-safe-bottom);
+}
+
+/* Fixed app bars ignore ancestor padding, so offset the bar itself. */
+.container1 :deep(.v-app-bar) {
+	top: var(--posa-safe-top) !important;
 }
 
 .page-content {
@@ -1346,6 +1378,7 @@ const adjust_frappe_sidebar_offset = () => {
 	min-height: 0;
 	overflow: auto;
 	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
 	padding-top: 6px;
 	background:
 		linear-gradient(
@@ -1385,38 +1418,22 @@ const adjust_frappe_sidebar_offset = () => {
 	margin-top: 4px;
 }
 
-/* Ensure proper spacing and prevent layout shifts */
-:deep(.v-main__wrap) {
-	display: flex;
-	flex-direction: column;
-	width: 100%;
-	min-height: 100%;
-	height: 100%;
-	min-width: 0;
-}
-
-@media (max-width: 768px) {
+/*
+ * Phones and short viewports (landscape phones, small till windows) share one
+ * contract: the shell keeps a fixed height and .page-content is the only
+ * scroller. The previous auto-height mode created two nested scrollers and
+ * disabled `overscroll-behavior: contain`, which let a pull gesture reload the
+ * SPA mid-sale.
+ */
+@media (max-width: 768px), (max-height: 560px) {
 	.container1 {
-		height: auto;
-		min-height: 100dvh;
-		overflow-y: auto;
-		overflow-x: hidden;
-	}
-
-	.main-content {
-		height: auto;
-		min-height: 100dvh;
+		padding-inline-start: 0;
 	}
 
 	.page-content {
-		overflow: visible;
-		min-height: 0;
-	}
-
-	:deep(.v-main__wrap) {
-		height: auto;
-		min-height: 100%;
-		overflow: visible;
+		overflow-x: hidden;
+		overflow-y: auto;
+		overscroll-behavior-y: contain;
 	}
 }
 </style>

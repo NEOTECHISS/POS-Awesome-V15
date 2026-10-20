@@ -51,6 +51,7 @@ import {
 	startStartupPhase,
 	traceStartupEvent,
 } from "../utils/startupTrace";
+import { applyPosViewport, restorePosViewport } from "./utils/viewport";
 
 declare const __BUILD_VERSION__: string;
 
@@ -256,6 +257,10 @@ class PosAppController {
 
 	async initializeApp() {
 		const phase = startStartupPhase("frappe.vue_app_mount");
+		// The desk shell's viewport disables zoom and omits viewport-fit=cover.
+		// Patch it for the lifetime of the POS so pinch-zoom and safe-area
+		// insets work; it is restored in unmount().
+		applyPosViewport();
 		// Vuetify instance is now imported from plugins/vuetify.ts
 		this.app = createApp(App);
 		const { router, history } = createPosAppRouter();
@@ -353,6 +358,7 @@ class PosAppController {
 			this.app = null;
 			this.router = null;
 			this.routerHistory = null;
+			restorePosViewport();
 			console.info("POS App unmounted");
 		}
 	}

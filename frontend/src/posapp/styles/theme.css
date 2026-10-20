@@ -243,8 +243,7 @@ body[data-page-route="posapp"] {
 .posapp,
 .posapp .v-application,
 .posapp .v-application__wrap,
-.posapp .v-main,
-.posapp .v-main__wrap {
+.posapp .v-main {
 	background-color: var(--pos-bg-secondary);
 	color: var(--pos-text-primary);
 	font-family: var(--pos-font-sans);
@@ -769,13 +768,34 @@ body[data-page-route="posapp"] .content.page-wrapper {
 	margin: 0 !important;
 }
 
-/* Override Frappe's layout constraints */
+/* Override Frappe's layout constraints.
+   The POS shell owns scrolling (.page-content). Leaving #body scrollable too
+   produced two nested scrollers on mobile and re-enabled pull-to-refresh,
+   which can reload the SPA in the middle of a sale. */
 body[data-page-route="posapp"] #body {
 	display: block !important;
 	min-height: 100dvh !important;
-	height: auto !important;
-	overflow-x: hidden !important;
-	overflow-y: auto !important;
+	height: 100dvh !important;
+	overflow: hidden !important;
+}
+
+/* Mobile dialog footer.
+   These rules used to live in public/css/responsive.css, which was never
+   loaded. Keeping them here makes the behaviour real for every POS dialog
+   that uses the shared .dialog-actions-container / .pos-action-btn classes. */
+@media (max-width: 600px) {
+	body[data-page-route="posapp"] .dialog-actions-container {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	body[data-page-route="posapp"] .dialog-actions-container .v-btn,
+	body[data-page-route="posapp"] .dialog-actions-container .pos-action-btn {
+		width: 100%;
+		min-width: 0;
+		margin-inline-start: 0 !important;
+	}
 }
 
 /* Ensure no residual sidebar space */
