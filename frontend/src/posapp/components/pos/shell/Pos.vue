@@ -1219,7 +1219,7 @@ export default {
 		transform 0.18s ease;
 }
 
-.mobile-pos-dock__item span {
+.mobile-pos-dock__item > span:not(.mobile-pos-dock__pill) {
 	display: block;
 	width: 100%;
 	min-width: 0;
@@ -1270,6 +1270,10 @@ export default {
 	position: absolute;
 	top: 4px;
 	right: 10px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: auto;
 	min-width: 18px;
 	height: 18px;
 	padding: 0 5px;
@@ -1277,7 +1281,8 @@ export default {
 	background: rgb(var(--v-theme-primary));
 	color: #fff;
 	font-size: 0.68rem;
-	line-height: 18px;
+	line-height: 1;
+	white-space: nowrap;
 	text-align: center;
 }
 
