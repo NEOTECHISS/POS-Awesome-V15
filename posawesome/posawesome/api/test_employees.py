@@ -314,6 +314,24 @@ class TestEmployeesApi(unittest.TestCase):
         self.assertEqual(self.pin_attempt_state, {})
         self.assertIn("succeeded", [event for _, event in self.pin_attempt_events])
 
+    def test_verify_terminal_employee_pin_rejects_when_pin_disabled(self):
+        self.employees.get_authorized_pos_profile = lambda profile: {
+            "name": "Main POS",
+            "posa_enable_cashier_pin": 0,
+        }
+        self.employees.frappe.get_all = Mock(
+            side_effect=AssertionError("users must not load when the PIN is disabled")
+        )
+
+        with self.assertRaisesRegex(Exception, "Cashier PIN is disabled"):
+            self.employees.verify_terminal_employee_pin(
+                "Main POS",
+                "cashier@example.com",
+                "1234",
+            )
+
+        self.employees.frappe.get_all.assert_not_called()
+
     def test_invalid_pin_never_activates_server_terminal_state(self):
         class FakeUserDoc:
             name = "backup@example.com"

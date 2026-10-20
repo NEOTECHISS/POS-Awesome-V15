@@ -17,6 +17,9 @@ export interface AuthoritativeTerminalState {
 	locked?: boolean;
 	verified_at?: string | null;
 	locked_at?: string | null;
+	pin_required?: boolean;
+	is_supervisor?: boolean;
+	can_override_below_cost?: boolean;
 }
 
 export type TerminalEmployeesLoadStatus =
@@ -47,6 +50,9 @@ export const useEmployeeStore = defineStore("employee", () => {
 	const terminalStateLoaded = ref(false);
 	const terminalLockPending = ref(false);
 	const invoiceUnlockPending = ref(false);
+	// Whether this POS Profile still requires a cashier PIN. The server state is
+	// authoritative; the POS Profile checkbox seeds it before the first load.
+	const pinRequired = ref(true);
 	const terminalEmployeesLoadStatus =
 		ref<TerminalEmployeesLoadStatus>("idle");
 	const terminalEmployeesLoadError = ref("");
@@ -106,6 +112,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 	const beginTerminalEmployeesLoad = (
 		profileName: string,
 		cachedEmployees: TerminalEmployee[] = [],
+		requirePin: boolean = true,
 	) => {
 		finishPendingUnlock(false);
 		const nextProfileName = String(profileName || "").trim();
@@ -123,7 +130,8 @@ export const useEmployeeStore = defineStore("employee", () => {
 				: [];
 		}
 		currentCashier.value = null;
-		lockDialogOpen.value = true;
+		pinRequired.value = requirePin;
+		lockDialogOpen.value = requirePin;
 		terminalStateLoaded.value = false;
 		switchDialogOpen.value = false;
 	};
@@ -168,23 +176,42 @@ export const useEmployeeStore = defineStore("employee", () => {
 		state: AuthoritativeTerminalState | null | undefined,
 		verifiedCashier?: TerminalEmployee | null,
 	) => {
+		if (state && state.pin_required !== undefined) {
+			pinRequired.value = Boolean(state.pin_required);
+		}
+
+		const globalFrappe =
+			(typeof window !== "undefined" ? window.frappe : undefined) ??
+			(globalThis as { frappe?: typeof window.frappe }).frappe;
+		const sessionUser = String(globalFrappe?.session?.user || "").trim();
 		const activeCashier = String(state?.active_cashier || "").trim();
+		// A PIN-free profile never locks, even if the state request failed
+		// offline; the signed-in session identity becomes the cashier.
+		const unlockedByPolicy = !pinRequired.value;
+		const locked = unlockedByPolicy ? false : state?.locked !== false;
+		const cashier = activeCashier || (unlockedByPolicy ? sessionUser : "");
+
 		const candidate =
-			verifiedCashier?.user === activeCashier
+			verifiedCashier?.user === cashier
 				? normalizeEmployee(verifiedCashier)
 				: terminalEmployees.value.find(
-						(employee) => employee.user === activeCashier,
+						(employee) => employee.user === cashier,
 					) ||
-					(state?.locked === false && activeCashier
+					(cashier && !locked
 						? normalizeEmployee({
-								user: activeCashier,
-								full_name: activeCashier,
+								user: cashier,
+								full_name: cashier,
 								enabled: 1,
+								is_supervisor: Boolean(state?.is_supervisor),
+								can_override_below_cost: Boolean(
+									state?.can_override_below_cost ??
+										state?.is_supervisor,
+								),
 							})
 						: null);
 
 		currentCashier.value = candidate;
-		lockDialogOpen.value = state?.locked !== false || !candidate;
+		lockDialogOpen.value = locked || !candidate;
 		terminalLockPending.value = false;
 		terminalStateLoaded.value = true;
 		if (lockDialogOpen.value) {
@@ -224,6 +251,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 	};
 
 	const openEmployeeSwitch = () => {
+		if (!pinRequired.value) return;
 		ensureCurrentCashier();
 		if (!lockDialogOpen.value) {
 			switchDialogOpen.value = true;
@@ -235,16 +263,28 @@ export const useEmployeeStore = defineStore("employee", () => {
 	};
 
 	const lockTerminal = () => {
+		if (!pinRequired.value) return;
 		switchDialogOpen.value = false;
 		lockDialogOpen.value = true;
 	};
 
 	const markTerminalLockPending = () => {
+		if (!pinRequired.value) return;
 		lockTerminal();
 		terminalLockPending.value = true;
 	};
 
+	const seedPinRequirement = (requirePin: boolean) => {
+		pinRequired.value = Boolean(requirePin);
+		if (!pinRequired.value) {
+			lockDialogOpen.value = false;
+		}
+	};
+
 	const requestTerminalUnlock = () => {
+		if (!pinRequired.value) {
+			return Promise.resolve(true);
+		}
 		lockTerminal();
 		invoiceUnlockPending.value = true;
 		if (!pendingUnlockPromise) {
@@ -276,6 +316,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 		terminalStateLoaded,
 		terminalLockPending,
 		invoiceUnlockPending,
+		pinRequired,
 		terminalEmployeesLoadStatus,
 		terminalEmployeesLoadError,
 		terminalEmployeesProfile,
@@ -293,6 +334,7 @@ export const useEmployeeStore = defineStore("employee", () => {
 		closeEmployeeSwitch,
 		lockTerminal,
 		markTerminalLockPending,
+		seedPinRequirement,
 		requestTerminalUnlock,
 		cancelPendingInvoiceSubmission,
 		unlockTerminal,

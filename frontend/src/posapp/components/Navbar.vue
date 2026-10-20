@@ -8,6 +8,7 @@
 		<NavbarAppBar
 			:pos-profile="posProfile"
 			:cashier-name="currentCashierDisplay"
+			:pin-required="pinRequired"
 			:pending-invoices="pendingInvoices"
 			:loading-progress="loadingProgress"
 			:loading-active="loadingActive"
@@ -206,7 +207,8 @@ export default {
 			unreadCount,
 		} = storeToRefs(toastStore);
 		const { isFrozen, freezeTitle, freezeMessage } = storeToRefs(uiStore);
-		const { currentCashier, currentCashierDisplay } = storeToRefs(employeeStore);
+		const { currentCashier, currentCashierDisplay, pinRequired } =
+			storeToRefs(employeeStore);
 		const { panelOpen: offlinePanelOpen } = storeToRefs(offlineSyncStore);
 
 		return {
@@ -229,6 +231,7 @@ export default {
 			employeeStore,
 			currentCashier,
 			currentCashierDisplay,
+			pinRequired,
 			offlinePanelOpen,
 		};
 	},
@@ -444,13 +447,19 @@ export default {
 			}
 
 			const personalActions = [
-				{
-					id: "manage-cashier-pin",
-					label: this.__("Manage Cashier PIN"),
-					subtitle: this.currentCashierDisplay || this.__("Create or change your PIN"),
-					icon: "mdi-form-textbox-password",
-					tone: "secondary",
-				},
+				...(this.employeeStore.pinRequired
+					? [
+							{
+								id: "manage-cashier-pin",
+								label: this.__("Manage Cashier PIN"),
+								subtitle:
+									this.currentCashierDisplay ||
+									this.__("Create or change your PIN"),
+								icon: "mdi-form-textbox-password",
+								tone: "secondary",
+							},
+						]
+					: []),
 				{
 					id: "toggle-theme",
 					label: this.__("Toggle Theme"),
@@ -516,6 +525,8 @@ export default {
 	created() {
 		// Initialize early to prevent reactivity issues
 		this.preInitialize();
+		// Avoid a one-frame flash of the unlock dialog on PIN-free profiles.
+		this.employeeStore.seedPinRequirement(this.isCashierPinRequired());
 	},
 	unmounted() {
 		if (this.terminalLockRetryHandle !== null) {
@@ -607,7 +618,7 @@ export default {
 				cachedCount: cachedEmployees.length,
 				timeoutMs: TERMINAL_SECURITY_REQUEST_TIMEOUT_MS,
 			});
-			this.employeeStore.beginTerminalEmployeesLoad(profileName, cachedEmployees);
+			this.employeeStore.beginTerminalEmployeesLoad(profileName, cachedEmployees, this.isCashierPinRequired());
 			const employeesRequest = withRequestTimeout(
 				Promise.resolve().then(() =>
 					frappe.call({
@@ -684,7 +695,25 @@ export default {
 				},
 			);
 		},
+		isCashierPinRequired() {
+			const value = this.posProfile?.posa_enable_cashier_pin;
+			if (value === undefined || value === null || value === "") {
+				return true;
+			}
+			if (typeof value === "string") {
+				const normalized = value.trim().toLowerCase();
+				if (["0", "false", "no", "off"].includes(normalized)) {
+					return false;
+				}
+				if (["1", "true", "yes", "on"].includes(normalized)) {
+					return true;
+				}
+				return Boolean(Number(normalized));
+			}
+			return Boolean(Number(value));
+		},
 		openEmployeeSwitch() {
+			if (!this.employeeStore.pinRequired) return;
 			this.employeeStore.openEmployeeSwitch();
 		},
 		setupTerminalSecurityChannel() {
@@ -695,6 +724,9 @@ export default {
 			this.terminalSecurityChannel.onmessage = (event) => {
 				const message = event?.data;
 				if (message?.type !== "lock-intent" || message?.posProfile !== this.posProfile?.name) {
+					return;
+				}
+				if (!this.employeeStore.pinRequired) {
 					return;
 				}
 				this.employeeStore.markTerminalLockPending();
@@ -743,6 +775,7 @@ export default {
 			return this.terminalLockRequestInFlight;
 		},
 		async lockPosScreen() {
+			if (!this.employeeStore.pinRequired) return;
 			this.employeeStore.markTerminalLockPending();
 			this.terminalSecurityChannel?.postMessage?.({
 				type: "lock-intent",

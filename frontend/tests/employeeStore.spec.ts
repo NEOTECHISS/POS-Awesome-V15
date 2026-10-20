@@ -187,6 +187,38 @@ describe("employeeStore", () => {
 		expect(store.isLocked).toBe(true);
 	});
 
+	it("keeps PIN-free profiles unlocked with the signed-in cashier", async () => {
+		const store = useEmployeeStore();
+
+		store.beginTerminalEmployeesLoad("Main POS", [], false);
+		expect(store.pinRequired).toBe(false);
+		expect(store.isLocked).toBe(false);
+
+		store.applyTerminalState({
+			pos_profile: "Main POS",
+			pin_required: false,
+			locked: false,
+			active_cashier: "cashier@example.com",
+			is_supervisor: true,
+		});
+
+		expect(store.pinRequired).toBe(false);
+		expect(store.isLocked).toBe(false);
+		expect(store.currentCashier?.user).toBe("cashier@example.com");
+		expect(store.currentCashier?.is_supervisor).toBe(true);
+
+		// A lost state response must not lock a PIN-free terminal offline.
+		store.applyTerminalState(null);
+		expect(store.isLocked).toBe(false);
+		expect(store.currentCashier?.user).toBe("cashier@example.com");
+
+		store.openEmployeeSwitch();
+		expect(store.switchDialogOpen).toBe(false);
+		store.lockTerminal();
+		expect(store.isLocked).toBe(false);
+		await expect(store.requestTerminalUnlock()).resolves.toBe(true);
+	});
+
 	it("resolves a pending invoice unlock only after unlock or explicit cancellation", async () => {
 		const store = useEmployeeStore();
 		store.setTerminalEmployees([

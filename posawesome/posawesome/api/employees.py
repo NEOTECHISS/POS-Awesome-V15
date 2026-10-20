@@ -17,6 +17,7 @@ from posawesome.posawesome.api.terminal_state import (
     activate_verified_cashier,
     get_active_terminal_cashier,
     get_authorized_terminal_state,
+    is_cashier_pin_required,
     lock_authorized_terminal,
 )
 
@@ -357,6 +358,9 @@ def get_terminal_employees(pos_profile=None):
 def verify_terminal_employee_pin(pos_profile=None, user=None, pin=None):
     profile_doc = get_authorized_pos_profile(pos_profile)
     profile_name = str(profile_doc.get("name") or "").strip()
+
+    if not is_cashier_pin_required(profile_doc):
+        frappe.throw(_("Cashier PIN is disabled for this POS Profile."))
 
     user = str(user or "").strip()
     pin = str(pin or "").strip()

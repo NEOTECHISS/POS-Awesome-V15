@@ -5,11 +5,12 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import cstr, now_datetime
+from frappe.utils import cint, cstr, now_datetime
 
 from posawesome.posawesome.api.pos_access import (
     get_authenticated_pos_user,
     get_authorized_pos_profile,
+    user_can_manage_pos,
 )
 
 
@@ -33,6 +34,57 @@ def _session_id() -> str:
 
 def _profile_name(profile_doc: Any) -> str:
     return cstr(profile_doc.get("name") if profile_doc else "").strip()
+
+
+def is_cashier_pin_required(profile_doc: Any) -> bool:
+    """Return whether this POS Profile asks for a cashier PIN.
+
+    The POS Profile checkbox ``posa_enable_cashier_pin`` defaults to enabled.  A
+    profile that predates the field keeps the previous PIN-protected behaviour.
+    """
+
+    if not profile_doc:
+        return True
+    value = (
+        profile_doc.get("posa_enable_cashier_pin")
+        if hasattr(profile_doc, "get")
+        else None
+    )
+    if value is None:
+        return True
+    return bool(cint(value))
+
+
+def _pin_disabled_cashier(profile_doc: Any) -> str:
+    """Resolve the signed-in user as the cashier when the PIN is disabled.
+
+    ``get_authorized_pos_profile()`` has already limited this profile to the
+    assigned cashiers and POS managers, so the authenticated session identity is
+    the correct actor for a PIN-free terminal.
+    """
+
+    user = get_authenticated_pos_user()
+    if not int(frappe.db.get_value("User", user, "enabled") or 0):
+        _permission_denied(_("The current user is disabled."))
+    return user
+
+
+def _pin_disabled_state(profile_doc: Any) -> dict[str, Any]:
+    """Return an unlocked terminal state for a PIN-free POS Profile."""
+
+    profile_name = _profile_name(profile_doc)
+    user = _pin_disabled_cashier(profile_doc)
+    supervisor = bool(user_can_manage_pos(user))
+    return {
+        "pos_profile": profile_name,
+        "active_cashier": user,
+        "locked": False,
+        "verified_at": cstr(now_datetime()),
+        "locked_at": None,
+        "pin_required": False,
+        "is_supervisor": supervisor,
+        "can_override_below_cost": supervisor,
+    }
 
 
 def _state_cache_key(profile_name: str) -> str:
@@ -115,7 +167,11 @@ def get_authorized_terminal_state(pos_profile=None) -> dict[str, Any]:
     """Return server-backed terminal state for an authorized profile."""
 
     profile_doc = get_authorized_pos_profile(pos_profile)
-    return _read_state(_profile_name(profile_doc))
+    if not is_cashier_pin_required(profile_doc):
+        return _pin_disabled_state(profile_doc)
+    state = _read_state(_profile_name(profile_doc))
+    state["pin_required"] = True
+    return state
 
 
 def activate_verified_cashier(profile_doc: Any, cashier: str) -> dict[str, Any]:
@@ -148,6 +204,11 @@ def get_active_terminal_cashier(pos_profile=None, *, require_unlocked: bool = Tr
     get_authenticated_pos_user()
     profile_doc = get_authorized_pos_profile(pos_profile)
     profile_name = _profile_name(profile_doc)
+
+    # PIN-free terminals use the authenticated session identity directly.
+    if not is_cashier_pin_required(profile_doc):
+        return _pin_disabled_cashier(profile_doc)
+
     state = _read_state(profile_name)
     if require_unlocked and state.get("locked"):
         _permission_denied(_("This POS terminal is locked. Verify a cashier PIN to continue."))

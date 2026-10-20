@@ -90,6 +90,7 @@ class TestTerminalState(unittest.TestCase):
 
         self.assertTrue(result["locked"])
         self.assertIsNone(result["active_cashier"])
+        self.assertTrue(result["pin_required"])
         self.assertTrue(self.cache.get_calls[-1]["expires"])
 
     def test_verified_pin_activation_is_server_backed_and_survives_reload(self):
@@ -176,6 +177,114 @@ class TestTerminalState(unittest.TestCase):
             self.assigned_users.clear()
             with self.assertRaisesRegex(PermissionError, "not assigned"):
                 terminal_state.get_active_terminal_cashier("Main POS")
+
+    def test_pin_requirement_defaults_to_enabled(self):
+        self.assertTrue(terminal_state.is_cashier_pin_required(None))
+        self.assertTrue(terminal_state.is_cashier_pin_required(FakeProfile()))
+        self.assertFalse(
+            terminal_state.is_cashier_pin_required(
+                FakeProfile(posa_enable_cashier_pin=0)
+            )
+        )
+        self.assertTrue(
+            terminal_state.is_cashier_pin_required(
+                FakeProfile(posa_enable_cashier_pin=1)
+            )
+        )
+
+    def test_pin_disabled_profile_returns_unlocked_session_cashier(self):
+        profile = FakeProfile(
+            name="Main POS",
+            company="RetailMind",
+            posa_enable_cashier_pin=0,
+        )
+
+        with (
+            patch.object(terminal_state, "frappe", self.fake_frappe),
+            patch.object(
+                terminal_state,
+                "get_authorized_pos_profile",
+                return_value=profile,
+            ),
+            patch.object(
+                terminal_state,
+                "get_authenticated_pos_user",
+                return_value="cashier@example.com",
+            ),
+            patch.object(
+                terminal_state,
+                "user_can_manage_pos",
+                return_value=False,
+            ),
+        ):
+            state = terminal_state.get_authorized_terminal_state("Main POS")
+
+        self.assertFalse(state["locked"])
+        self.assertEqual(state["active_cashier"], "cashier@example.com")
+        self.assertFalse(state["pin_required"])
+        self.assertFalse(state["is_supervisor"])
+        self.assertEqual(self.cache.get_calls, [])
+
+    def test_pin_disabled_profile_bypasses_locked_terminal_cache(self):
+        profile = FakeProfile(
+            name="Main POS",
+            company="RetailMind",
+            posa_enable_cashier_pin=0,
+        )
+        self.cache.values[terminal_state._state_cache_key("Main POS")] = {
+            "pos_profile": "Main POS",
+            "active_cashier": "supervisor@example.com",
+            "locked": True,
+            "verified_at": "2026-07-12 19:00:00",
+            "locked_at": "2026-07-12 19:05:00",
+        }
+
+        with (
+            patch.object(terminal_state, "frappe", self.fake_frappe),
+            patch.object(
+                terminal_state,
+                "get_authorized_pos_profile",
+                return_value=profile,
+            ),
+            patch.object(
+                terminal_state,
+                "get_authenticated_pos_user",
+                return_value="cashier@example.com",
+            ),
+        ):
+            cashier = terminal_state.get_active_terminal_cashier("Main POS")
+
+        self.assertEqual(cashier, "cashier@example.com")
+
+    def test_pin_disabled_profile_exposes_supervisor_flags(self):
+        profile = FakeProfile(
+            name="Main POS",
+            company="RetailMind",
+            posa_enable_cashier_pin=0,
+        )
+
+        with (
+            patch.object(terminal_state, "frappe", self.fake_frappe),
+            patch.object(
+                terminal_state,
+                "get_authorized_pos_profile",
+                return_value=profile,
+            ),
+            patch.object(
+                terminal_state,
+                "get_authenticated_pos_user",
+                return_value="supervisor@example.com",
+            ),
+            patch.object(
+                terminal_state,
+                "user_can_manage_pos",
+                return_value=True,
+            ),
+        ):
+            state = terminal_state.get_authorized_terminal_state("Main POS")
+
+        self.assertTrue(state["is_supervisor"])
+        self.assertTrue(state["can_override_below_cost"])
 
 
 if __name__ == "__main__":

@@ -105,6 +105,44 @@ describe("NavbarAppBar", () => {
 		).toBe("button");
 	});
 
+	it("renders the cashier chip as a static identity when the PIN is disabled", async () => {
+		const wrapper = mount(NavbarAppBar, {
+			props: {
+				posProfile: { name: "Main POS", posa_enable_cashier_pin: 0 },
+				cashierName: "Main Cashier",
+				pinRequired: false,
+			},
+			global: {
+				mocks: {
+					__: (value: string) => value,
+					$theme: { isDark: { value: false } },
+				},
+				components: {
+					VAppBar: BoxStub,
+					VAppBarNavIcon: ButtonStub,
+					VImg: BoxStub,
+					VToolbarTitle: BoxStub,
+					VSpacer: BoxStub,
+					VBtn: ButtonStub,
+					VBadge: BoxStub,
+					VTooltip: BoxStub,
+					VChip: ButtonStub,
+					VIcon: BoxStub,
+					VProgressLinear: BoxStub,
+					NavbarInfoGadgets: BoxStub,
+				},
+			},
+		});
+
+		const chip = wrapper.get('[data-test="cashier-chip"]');
+		expect(chip.attributes("role")).toBeUndefined();
+		expect(chip.attributes("tabindex")).toBe("-1");
+		expect(chip.text()).toContain("Main Cashier");
+
+		await chip.trigger("click");
+		expect(wrapper.emitted("open-employee-switch")).toBeUndefined();
+	});
+
 	it("renders POS Profile branding only when it is explicitly enabled", () => {
 		const wrapper = mount(NavbarAppBar, {
 			props: {

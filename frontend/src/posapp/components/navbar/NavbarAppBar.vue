@@ -133,17 +133,18 @@
 							isRtl ? 'rtl-profile-chip' : 'ltr-profile-chip',
 						]"
 						data-test="cashier-chip"
-						tabindex="0"
-						role="button"
-						@click="$emit('open-employee-switch')"
-						@keydown.enter="$emit('open-employee-switch')"
+						:tabindex="pinRequired ? 0 : -1"
+						:role="pinRequired ? 'button' : undefined"
+						:title="pinRequired ? __('Switch cashier') : __('Signed-in user')"
+						@click="pinRequired && $emit('open-employee-switch')"
+						@keydown.enter="pinRequired && $emit('open-employee-switch')"
 					>
 						<v-icon
 							:start="!isRtl"
 							:end="isRtl"
 							:class="['pos-text-primary', isRtl ? 'rtl-profile-icon' : 'ltr-profile-icon']"
 						>
-							mdi-account-switch-outline
+							{{ pinRequired ? "mdi-account-switch-outline" : "mdi-account-outline" }}
 						</v-icon>
 						<span
 							:class="[
@@ -310,6 +311,10 @@ export default {
 		cashierName: {
 			type: String,
 			default: "",
+		},
+		pinRequired: {
+			type: Boolean,
+			default: true,
 		},
 	},
 	computed: {
