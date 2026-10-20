@@ -33,6 +33,14 @@ describe("createReportFormatters", () => {
 		expect(formatters.formatMoney(1234.5)).toBe("1,234.50");
 	});
 
+	it("uses the official Riyal glyph in reports", () => {
+		vi.stubGlobal("get_currency_symbol", () => "§");
+
+		const formatters = buildFormatters("SAR");
+
+		expect(formatters.formatMoney(1150)).toBe("\u20C1 1,150.00");
+	});
+
 	it("formats quantities, signed quantities, percentages, days, and dates safely", () => {
 		const formatters = buildFormatters();
 

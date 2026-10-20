@@ -3,11 +3,24 @@
  * These variables are updated dynamically by the useTheme composable
  */
 
+/* Official Saudi Riyal sign (U+20C1). The font only contains that glyph, so
+   it is used first in the POS font stacks and the browser falls through to
+   the normal UI fonts for every other character.
+   Saudi Riyal Font © Emran Alhaddad - SIL Open Font License 1.1 */
+@font-face {
+	font-family: "Saudi Riyal";
+	src: url("./fonts/saudi-riyal.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	unicode-range: U+20C1;
+}
+
 :root {
 	/* Clinical-retail foundation */
-	--pos-font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", "Noto Sans Arabic", Tahoma, sans-serif;
+	--pos-font-sans: "Saudi Riyal", "Aptos", "Segoe UI Variable", "Segoe UI", "Noto Sans Arabic", Tahoma, sans-serif;
 	--pos-font-display:
-		"Aptos Display", "Segoe UI Variable Display", "Segoe UI", "Noto Sans Arabic", Tahoma, sans-serif;
+		"Saudi Riyal", "Aptos Display", "Segoe UI Variable Display", "Segoe UI", "Noto Sans Arabic", Tahoma, sans-serif;
 	--pos-control-height: 44px;
 	--pos-control-height-compact: 38px;
 	--pos-action-pay: #16784a;

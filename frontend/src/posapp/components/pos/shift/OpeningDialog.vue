@@ -145,6 +145,7 @@ import {
 } from "../../../../offline/index";
 import { createBootstrapSnapshotFromRegisterData } from "../../../../offline/bootstrapSnapshot";
 import authService from "../../../services/authService";
+import { resolveCurrencySymbol } from "../../../utils/currencySymbol";
 
 defineOptions({
 	name: "OpeningDialog",
@@ -156,7 +157,6 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "register"]);
 const __ = window.__ || ((text) => text);
-const get_currency_symbol = window.get_currency_symbol;
 const BUILD_VERSION = typeof __BUILD_VERSION__ !== "undefined" ? __BUILD_VERSION__ : null;
 
 const isOpen = ref(props.dialog ? props.dialog : false);
@@ -185,7 +185,7 @@ const payments_methods_headers = [
 const itemsPerPage = ref(100);
 const max25chars = (v) => v.length <= 12 || "Input too long!";
 
-const currencySymbol = (currency) => get_currency_symbol?.(currency);
+const currencySymbol = (currency) => resolveCurrencySymbol(currency);
 
 watch(
 	() => props.dialog,

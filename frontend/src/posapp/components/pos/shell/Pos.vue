@@ -310,6 +310,7 @@ import { useToastStore } from "../../../stores/toastStore";
 import { storeToRefs } from "pinia";
 import { useCustomerDisplayPublisher } from "../../../composables/pos/shared/useCustomerDisplayPublisher";
 import { isCounterGridTemplate } from "../../../utils/posUiTemplate";
+import { resolveCurrencySymbol } from "../../../utils/currencySymbol";
 import { collectUnavailableCartItems } from "../../../utils/alternateCart";
 import { shouldRedirectPosTabToItemSearch } from "../../../utils/keyboardNavigation";
 import { shouldFocusCartQtyAfterItemAdd } from "../../../utils/cartFocusSettings";
@@ -401,11 +402,7 @@ export default {
 				maximumFractionDigits: value % 1 === 0 ? 0 : 2,
 			}).format(Number(value || 0));
 		const getCurrencySymbol = (currency) => {
-			const resolver = window.get_currency_symbol || globalThis.get_currency_symbol;
-			if (typeof resolver === "function") {
-				return resolver(currency || activeCurrency.value || "") || "";
-			}
-			return currency ? `${currency} ` : "";
+			return resolveCurrencySymbol(currency || activeCurrency.value || "");
 		};
 		const formattedCartTotal = computed(() => {
 			const symbol = getCurrencySymbol(activeCurrency.value);

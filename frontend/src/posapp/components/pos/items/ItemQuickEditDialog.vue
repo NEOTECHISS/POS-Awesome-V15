@@ -247,7 +247,7 @@
 										step="0.01"
 										density="compact"
 										variant="outlined"
-										prefix="Rs"
+										:prefix="currencyPrefix"
 										:disabled="!loaded"
 										@update:model-value="handleRetailPriceUpdate"
 									></v-text-field>
@@ -281,7 +281,7 @@
 										step="0.01"
 										density="compact"
 										variant="outlined"
-										prefix="Rs"
+										:prefix="currencyPrefix"
 										:disabled="!loaded"
 										@update:model-value="handleTradePriceUpdate"
 									></v-text-field>
@@ -389,6 +389,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useResponsive } from "../../../composables/core/useResponsive";
+import { resolveCurrencySymbol } from "../../../utils/currencySymbol";
 import itemService from "../../../services/itemService";
 import {
 	calculateTradeDiscountPercent,
@@ -417,6 +418,8 @@ const emit = defineEmits<{
 	"after-leave": [];
 	saved: [payload: any];
 }>();
+
+const currencyPrefix = computed(() => resolveCurrencySymbol(props.posProfile?.currency));
 
 const arrowKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 let generatedKeyboardTargetId = 0;

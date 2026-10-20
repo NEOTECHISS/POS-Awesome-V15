@@ -1,3 +1,5 @@
+import { resolveCurrencySymbol } from "../../../utils/currencySymbol";
+
 const __ = window.__ || ((text) => text);
 
 export function formatPurchaseDate(value) {
@@ -18,10 +20,7 @@ export function formatPurchaseAmount(value) {
 
 export function purchaseCurrencySymbol(currency) {
 	if (!currency) return "";
-	if (typeof get_currency_symbol === "function") {
-		return get_currency_symbol(currency);
-	}
-	return currency;
+	return resolveCurrencySymbol(currency);
 }
 
 function parseServerMessages(raw) {

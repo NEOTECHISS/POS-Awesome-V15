@@ -198,6 +198,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { formatUtils } from "../format";
+import { resolveCurrencySymbol } from "../utils/currencySymbol";
 import { getOfflineInvoices, deleteOfflineInvoice, getPendingOfflineInvoiceCount } from "../../offline/index";
 
 defineOptions({
@@ -218,7 +219,6 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue", "deleted", "sync-all"]);
 const __ = window.__ || ((text) => text);
-const get_currency_symbol = window.get_currency_symbol;
 const currency_precision = ref(2);
 
 const dialog = ref(props.modelValue);
@@ -297,7 +297,7 @@ function formatCurrency(value, precision) {
 }
 
 function currencySymbol(currency) {
-	return get_currency_symbol?.(currency);
+	return resolveCurrencySymbol(currency);
 }
 
 function loadInvoices() {

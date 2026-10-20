@@ -115,7 +115,7 @@
 				</div>
 				<div class="gift-cards-view__stat">
 					<span>{{ __("Balance") }}</span>
-					<strong>{{ formatCurrency(balance) }}</strong>
+					<strong>{{ formatCurrency(balance, posProfile?.currency) }}</strong>
 					<small>{{ __("Current redeemable value on the gift card") }}</small>
 				</div>
 				<div class="gift-cards-view__stat">
@@ -158,6 +158,7 @@
 import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 
+import { useFormat } from "../../../format";
 import { useEmployeeStore } from "../../../stores/employeeStore";
 import { useUIStore } from "../../../stores/uiStore";
 
@@ -168,6 +169,7 @@ const employeeStore = useEmployeeStore();
 const uiStore = useUIStore();
 const { currentCashier } = storeToRefs(employeeStore);
 const { posProfile } = storeToRefs(uiStore);
+const { formatCurrency } = useFormat();
 
 const cardCode = ref("");
 const amount = ref("");
@@ -199,14 +201,6 @@ const flt = (value) => {
 		return window.flt(value || 0, 2);
 	}
 	return Number(value || 0);
-};
-
-const formatCurrency = (value) => {
-	const numeric = flt(value);
-	const formatter = typeof window?.format_currency === "function" ? window.format_currency : null;
-	return formatter
-		? formatter(numeric, posProfile.value?.currency || "")
-		: `${posProfile.value?.currency || ""} ${numeric}`.trim();
 };
 
 const setMessage = (text, type = "info") => {

@@ -1,3 +1,5 @@
+import { resolveCurrencySymbol } from "../utils/currencySymbol";
+
 type Translator = (value: string) => string;
 
 type ReportFormatterOptions = {
@@ -17,11 +19,13 @@ export function createReportFormatters(options: ReportFormatterOptions) {
 			maximumFractionDigits: 2,
 		}).format(amount);
 		const resolvedCurrency = currency || options.getCurrency();
-		const symbol =
-			typeof get_currency_symbol === "function" && resolvedCurrency
-				? get_currency_symbol(resolvedCurrency)
-				: "";
-		return symbol ? `${symbol} ${formatted}` : `${resolvedCurrency} ${formatted}`.trim();
+		const symbol = resolvedCurrency
+			? resolveCurrencySymbol(resolvedCurrency)
+			: "";
+		if (!symbol) {
+			return `${resolvedCurrency} ${formatted}`.trim();
+		}
+		return `${symbol}${symbol.endsWith(" ") ? "" : " "}${formatted}`;
 	}
 
 	function formatMoney(value: number) {

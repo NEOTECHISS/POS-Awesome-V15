@@ -326,6 +326,12 @@ const onDragEnd = (event) => {
 	font-variant-numeric: tabular-nums;
 }
 
+.primary-price .currency-symbol,
+.secondary-price .currency-symbol {
+	font-size: calc(1em + 2px);
+	line-height: 1;
+}
+
 .secondary-price {
 	font-size: 0.8rem;
 	color: var(--pos-text-secondary);

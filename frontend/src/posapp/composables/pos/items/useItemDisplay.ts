@@ -1,7 +1,6 @@
 import { ref, computed, reactive } from "vue";
 import { getItemsTableHeaders } from "../../../utils/itemsTableHeaders.js";
-
-declare const get_currency_symbol: (_currency: string) => string;
+import { resolveCurrencySymbol } from "../../../utils/currencySymbol";
 
 type DisplayContext = {
 	pos_profile: unknown;
@@ -47,7 +46,7 @@ export function useItemDisplay() {
 	};
 
 	const currencySymbol = (currency: string) => {
-		return get_currency_symbol(currency);
+		return resolveCurrencySymbol(currency);
 	};
 
 	const format_currency = (

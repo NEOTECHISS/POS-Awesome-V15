@@ -78,8 +78,9 @@ const formatValue = (info: ItemRateInfoEntry) => {
 	const precision = props.ratePrecision(info.rate || 0);
 	const formatted = props.formatCurrency(info.rate, currency, precision);
 	const symbol = currency ? props.currencySymbol(currency) : "";
+	const separator = symbol && !symbol.endsWith(" ") ? " " : "";
 	const uom = info.uom ? ` / ${info.uom}` : "";
-	return `${symbol} ${formatted}${uom}`.trim();
+	return `${symbol}${separator}${formatted}${uom}`.trim();
 };
 
 const formatMeta = (info: ItemRateInfoEntry) => {

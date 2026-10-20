@@ -119,7 +119,9 @@ export default {
 				const resolvedCurrency = currency || "";
 				const symbol = currencySymbol(resolvedCurrency);
 				const formatted = formatCurrency(amount || 0);
-				if (symbol) return `${symbol} ${formatted}`;
+				if (symbol) {
+					return `${symbol}${symbol.endsWith(" ") ? "" : " "}${formatted}`;
+				}
 				return `${resolvedCurrency} ${formatted}`.trim();
 			},
 			formatCount: (value) => formatFloat(value || 0, 0),

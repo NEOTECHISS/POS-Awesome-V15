@@ -1,4 +1,5 @@
 import { perfMarkStart, perfMarkEnd } from "../../../utils/perf";
+import { resolveCurrencySymbol } from "../../../utils/currencySymbol";
 
 type InvoiceItem = {
 	qty?: number;
@@ -174,7 +175,7 @@ const invoiceComputed: Record<string, unknown> & ThisType<InvoiceComputedVm> = {
 	// Get currency symbol for display
 	currencySymbol() {
 		return (currency) => {
-			return get_currency_symbol(
+			return resolveCurrencySymbol(
 				currency || this.selected_currency || this.pos_profile.currency,
 			);
 		};

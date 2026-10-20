@@ -237,6 +237,7 @@ import {
 } from "../../../services/documentPrint";
 
 import { useRtl } from "../../../composables/core/useRtl";
+import { resolveCurrencySymbol } from "../../../utils/currencySymbol";
 import { useCustomersStore } from "../../../stores/customersStore.js";
 import { useUIStore } from "../../../stores/uiStore.js";
 import { useToastStore } from "../../../stores/toastStore.js";
@@ -360,7 +361,7 @@ export default {
 				useGrouping: true,
 			});
 		};
-		const currencySymbol = (currency) => get_currency_symbol(currency || pos_profile.value?.currency);
+		const currencySymbol = (currency) => resolveCurrencySymbol(currency || pos_profile.value?.currency);
 
 		// Initialize Composables
 		const {

@@ -1,10 +1,10 @@
 import { computed } from "vue";
 import { useUIStore } from "./stores/uiStore";
+import { resolveCurrencySymbol } from "./utils/currencySymbol";
 
 declare const frappe: any;
 declare const __: any;
 declare const flt: any;
-declare const get_currency_symbol: any;
 
 // Type definitions for RTL and numeral systems
 export type NumeralsMode = "western" | "arabic-indic";
@@ -312,7 +312,7 @@ export function useFormat() {
 	};
 
 	const currencySymbol = (currency: string): string => {
-		return get_currency_symbol(currency);
+		return resolveCurrencySymbol(currency);
 	};
 
 	const isNumber = (value: any): boolean | string => {
@@ -468,7 +468,7 @@ export default {
 			return toArabicNumerals(formatted);
 		},
 		currencySymbol(currency: string): string {
-			return get_currency_symbol(currency);
+			return resolveCurrencySymbol(currency);
 		},
 		isNumber(value: any): boolean | string {
 			const westernValue = fromArabicNumerals(String(value));

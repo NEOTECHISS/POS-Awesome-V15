@@ -30,14 +30,14 @@
 				<div v-if="context !== 'purchase'">
 					<div class="text-primary rate-cell-primary">
 						<div>
-							{{
+							<span class="currency-symbol">{{
 								currencySymbol(
 									item.original_currency ||
 										item.currency ||
 										item.price_list_currency ||
 										posProfile.currency,
 								)
-							}}
+							}}</span>
 							{{
 								formatCurrency(
 									item.original_rate ?? item.rate ?? 0,
@@ -69,7 +69,7 @@
 						"
 						class="text-success"
 					>
-						{{ currencySymbol(selectedCurrency) }}
+						<span class="currency-symbol">{{ currencySymbol(selectedCurrency) }}</span>
 						{{
 							formatCurrency(
 								secondaryRate(item),
@@ -82,14 +82,14 @@
 				<div v-else>
 					<div class="text-primary rate-cell-primary">
 						<div>
-							{{
+							<span class="currency-symbol">{{
 								currencySymbol(
 									item.original_currency ||
 										item.currency ||
 										item.price_list_currency ||
 										posProfile.currency,
 								)
-							}}
+							}}</span>
 							{{
 								formatCurrency(
 									item.original_rate ?? item.rate ?? item.standard_rate ?? 0,
@@ -301,6 +301,11 @@ defineExpose({ scrollToIndex, getTableElement, tableRef });
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
+}
+
+.currency-symbol {
+	font-size: calc(1em + 2px);
+	line-height: 1;
 }
 
 .sleek-data-table {

@@ -1000,7 +1000,8 @@ function handleDiscountAmountPaste(event) {
 .currency-symbol {
 	opacity: 0.7;
 	margin-right: 0;
-	font-size: 0.85em;
+	font-size: calc(0.85em + 2px);
+	line-height: 1;
 	flex: 0 0 auto;
 }
 

@@ -212,6 +212,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 import { formatUtils } from "../../../format";
+import { purchaseCurrencySymbol } from "./purchaseFormatting";
 import { getSmartTenderSuggestions } from "../../../../utils/smartTender";
 
 defineOptions({
@@ -424,7 +425,7 @@ function getVisibleDenominations(payment) {
 }
 
 function currencySymbol(curr) {
-	return curr || "";
+	return purchaseCurrencySymbol(curr);
 }
 
 function close() {

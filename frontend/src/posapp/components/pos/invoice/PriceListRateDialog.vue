@@ -61,7 +61,8 @@ const rateInput = ref("");
 const rateInputRef = ref<any>(null);
 
 const currencyPrefix = computed(() => {
-	return props.currencySymbol ? `${props.currencySymbol} ` : "";
+	if (!props.currencySymbol) return "";
+	return `${props.currencySymbol}${props.currencySymbol.endsWith(" ") ? "" : " "}`;
 });
 
 watch(
