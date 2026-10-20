@@ -8944,5 +8944,79 @@
 		"depends_on": "eval:doc.posa_allow_return==1 && !doc.create_pos_invoice_instead_of_sales_invoice",
 		"insert_after": "posa_allow_return",
 		"name": "POS Profile-posa_allow_item_exchange"
+	},
+	{
+		"doctype": "Custom Field",
+		"dt": "Customer",
+		"fieldname": "posa_cost_center",
+		"fieldtype": "Link",
+		"label": "POS Cost Center",
+		"options": "Cost Center",
+		"description": "Used automatically on POS invoices when the invoice has no cost center.",
+		"insert_after": "posa_discount",
+		"name": "Customer-posa_cost_center"
+	},
+	{
+		"doctype": "Custom Field",
+		"dt": "Customer Group",
+		"fieldname": "posa_cost_center",
+		"fieldtype": "Link",
+		"label": "POS Cost Center",
+		"options": "Cost Center",
+		"description": "Fallback cost center for POS invoices of customers in this group (child groups inherit from their parent).",
+		"insert_after": "parent_customer_group",
+		"name": "Customer Group-posa_cost_center"
+	},
+	{
+		"doctype": "Custom Field",
+		"dt": "POS Profile",
+		"fieldname": "posa_section_invoice_defaults",
+		"fieldtype": "Section Break",
+		"label": "Invoice Field Defaults",
+		"collapsible": 1,
+		"insert_after": "posa_allow_item_exchange",
+		"name": "POS Profile-posa_section_invoice_defaults"
+	},
+	{
+		"doctype": "Custom Field",
+		"dt": "POS Profile",
+		"fieldname": "posa_invoice_field_defaults",
+		"fieldtype": "Table",
+		"label": "Invoice Field Defaults",
+		"options": "POS Invoice Field Default",
+		"description": "Fill mandatory Sales Invoice fields that the POS does not display.",
+		"insert_after": "posa_section_invoice_defaults",
+		"name": "POS Profile-posa_invoice_field_defaults"
+	},
+	{
+		"doctype": "Custom Field",
+		"dt": "POS Profile",
+		"fieldname": "posa_ignore_mandatory_fields",
+		"fieldtype": "Check",
+		"label": "Ignore Sales Invoice Mandatory Fields",
+		"default": "1",
+		"description": "Allow POS invoices to save even when a mandatory Sales Invoice field is not collected by the POS. Core fields (company, customer, posting date, items) are always validated.",
+		"insert_after": "posa_invoice_field_defaults",
+		"name": "POS Profile-posa_ignore_mandatory_fields"
+	},
+	{
+		"doctype": "Custom Field",
+		"dt": "POS Profile",
+		"fieldname": "posa_section_terminal_security",
+		"fieldtype": "Section Break",
+		"label": "Terminal Security",
+		"insert_after": "posa_ignore_mandatory_fields",
+		"name": "POS Profile-posa_section_terminal_security"
+	},
+	{
+		"doctype": "Custom Field",
+		"dt": "POS Profile",
+		"fieldname": "posa_enable_cashier_pin",
+		"fieldtype": "Check",
+		"label": "Enable Cashier PIN",
+		"default": "1",
+		"description": "When enabled, the POS asks for a cashier PIN to unlock and switch terminals. When disabled, the signed-in user operates the POS without a PIN.",
+		"insert_after": "posa_section_terminal_security",
+		"name": "POS Profile-posa_enable_cashier_pin"
 	}
 ]

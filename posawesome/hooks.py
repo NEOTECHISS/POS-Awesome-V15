@@ -109,6 +109,7 @@ doc_events = {
         "on_trash": "posawesome.posawesome.api.item_processing.alternates.clear_alternate_item_caches",
     },
     "Sales Invoice": {
+        "before_validate": "posawesome.posawesome.api.invoice_processing.pos_defaults.apply_pos_invoice_defaults",
         "validate": "posawesome.posawesome.api.invoice.validate",
         "before_save": "posawesome.posawesome.api.payment_currency.preserve_multi_currency_payment_amounts",
         "before_submit": "posawesome.posawesome.api.invoice.before_submit",
@@ -116,6 +117,7 @@ doc_events = {
         "on_cancel": "posawesome.posawesome.api.invoice.on_cancel",
     },
     "POS Invoice": {
+        "before_validate": "posawesome.posawesome.api.invoice_processing.pos_defaults.apply_pos_invoice_defaults",
         "validate": "posawesome.posawesome.api.invoice.validate",
         "before_save": "posawesome.posawesome.api.payment_currency.preserve_multi_currency_payment_amounts",
         "before_submit": "posawesome.posawesome.api.invoice.before_submit",
@@ -412,6 +414,13 @@ fixtures = [
                     "POS Invoice-posa_below_cost_override_by",
                     "POS Invoice-posa_below_cost_override_reason",
                     "POS Invoice-posa_below_cost_override_details",
+                    "Customer-posa_cost_center",
+                    "Customer Group-posa_cost_center",
+                    "POS Profile-posa_section_invoice_defaults",
+                    "POS Profile-posa_invoice_field_defaults",
+                    "POS Profile-posa_ignore_mandatory_fields",
+                    "POS Profile-posa_section_terminal_security",
+                    "POS Profile-posa_enable_cashier_pin",
                     "User-posa_pos_pin",
                 ),
             ]
