@@ -1,0 +1,19 @@
+/* Customize the Print button in the print view */
+.action-banner a[onclick="window.print()"] {
+    background-color: var(--primary);
+    color: #fff !important;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 6px;
+    text-decoration: none !important;
+    display: inline-block;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* Hover effect */
+.action-banner a[onclick="window.print()"]:hover {
+    filter: brightness(0.9);
+}

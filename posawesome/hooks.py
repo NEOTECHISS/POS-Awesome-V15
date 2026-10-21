@@ -22,7 +22,7 @@ required_apps = ["erpnext"]
 # POS assets are loaded on-demand from the POS page bootstrap so the Desk shell
 # does not retain stale bundles across bench builds.
 app_include_js = []
-app_include_css = []
+app_include_css = ["/assets/posawesome/css/posawesome.css"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/posawesome/css/posawesome.css"
