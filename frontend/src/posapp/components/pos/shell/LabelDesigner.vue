@@ -46,7 +46,7 @@
 						:width="canvasPx.width" :height="canvasPx.height">
 						<line v-for="i in gridLinesX" :key="'gx'+i"
 							:x1="mmToPx(i * designer.gridSize.value)" y1="0"
-							:x2="mmToPx(i * designer.gridSize.value)" y2="canvasPx.height"
+							:x2="mmToPx(i * designer.gridSize.value)" :y2="canvasPx.height"
 							stroke="#e0e0e0" stroke-width="0.5" />
 						<line v-for="i in gridLinesY" :key="'gy'+i"
 							x1="0" :y1="mmToPx(i * designer.gridSize.value)"
@@ -765,5 +765,48 @@ watch(() => props.designer.labelSize.value, () => {
 	flex-shrink: 0;
 	border-top: 1px solid var(--pos-border-light, #e0e0e0);
 	background: var(--pos-surface-variant, #fafafa);
+}
+
+@media (max-width: 959.98px) {
+	.designer-toolbar {
+		flex-wrap: wrap;
+		row-gap: 4px;
+		padding: 4px !important;
+	}
+
+	.designer-toolbar :deep(.v-divider) {
+		display: none;
+	}
+
+	.designer-toolbar :deep(.v-btn) {
+		min-width: 28px;
+	}
+
+	.designer-toolbar :deep(.v-checkbox) {
+		flex: 0 0 auto;
+	}
+
+	.designer-toolbar :deep(.v-checkbox .v-label) {
+		font-size: 0.72rem;
+	}
+
+	.designer-scroll {
+		justify-content: flex-start;
+		align-items: flex-start;
+		padding: 20px 16px;
+	}
+
+	.designer-toolbox {
+		flex-wrap: wrap;
+		row-gap: 4px;
+		padding: 4px !important;
+	}
+
+	.designer-toolbox :deep(.v-btn) {
+		flex: 1 1 45%;
+		min-width: 0;
+		font-size: 0.72rem;
+		text-transform: none;
+	}
 }
 </style>

@@ -1,8 +1,44 @@
 <template>
-	<div class="pa-0 h-100">
+	<div
+		class="pa-0 h-100 barcode-printing-page"
+		:class="{ 'barcode-printing-page--mobile': isMobileLayout }"
+	>
+		<div v-if="isMobileLayout" class="barcode-mobile-header">
+			<div class="barcode-mobile-header__copy">
+				<span class="barcode-mobile-header__title">{{ __("Barcode Printing") }}</span>
+				<span class="barcode-mobile-header__meta">
+					{{ mobilePane === "items" ? __("Select barcode items") : __("Review and print labels") }}
+				</span>
+			</div>
+			<v-btn-toggle
+				v-model="mobilePane"
+				mandatory
+				density="compact"
+				divided
+				class="barcode-mobile-tabs"
+			>
+				<v-btn value="items" size="small" class="text-none">
+					<v-icon start size="18">mdi-magnify</v-icon>
+					<span>{{ __("Items") }}</span>
+				</v-btn>
+				<v-btn value="workspace" size="small" class="text-none">
+					<v-icon start size="18">mdi-printer-outline</v-icon>
+					<span>{{ __("Print") }}</span>
+					<span v-if="totalLabelCount" class="barcode-mobile-tab-count">
+						{{ totalLabelCount }}
+					</span>
+				</v-btn>
+			</v-btn-toggle>
+		</div>
+
 		<v-row class="h-100 ma-0">
 			<!-- Left Column: Item Selector -->
-			<v-col cols="12" md="5" class="h-100 pa-0 border-e d-flex flex-column">
+			<v-col
+				cols="12"
+				md="5"
+				class="h-100 pa-0 border-e d-flex flex-column barcode-pane-col barcode-pane-col--items"
+				:class="{ 'barcode-pane-hidden': isMobileLayout && mobilePane !== 'items' }"
+			>
 				<ItemsSelector
 					context="barcode"
 					:showOnlyBarcodeItems="true"
@@ -13,282 +49,409 @@
 			</v-col>
 
 			<!-- Right Column: Barcode Printing -->
-			<v-col cols="12" md="7" class="h-100 pa-0">
+			<v-col
+				cols="12"
+				md="7"
+				class="h-100 pa-0 barcode-pane-col barcode-pane-col--workspace"
+				:class="{ 'barcode-pane-hidden': isMobileLayout && mobilePane !== 'workspace' }"
+			>
 				<v-card class="h-100 d-flex flex-column pos-themed-card" flat>
-					<v-card-title class="py-2 px-4 bg-primary text-white d-flex align-center">
-						<span class="text-h6">{{ __("Barcode Label Printing") }}</span>
+					<v-card-title
+						class="py-2 px-4 bg-primary text-white d-flex align-center barcode-workspace-title"
+					>
+						<span class="text-h6 barcode-workspace-title__text">{{
+							__("Barcode Label Printing")
+						}}</span>
 						<v-spacer></v-spacer>
-						<v-btn-toggle v-model="viewMode" mandatory density="compact" color="white" variant="text" divided>
-							<v-btn value="labels" size="small" class="text-none">
+						<v-btn-toggle
+							v-model="viewMode"
+							mandatory
+							density="compact"
+							color="white"
+							variant="text"
+							divided
+							class="barcode-view-toggle"
+						>
+							<v-btn value="labels" size="small" class="text-none" :aria-label="__('Labels')">
 								<v-icon start>mdi-format-list-bulleted</v-icon>
 								<span class="d-none d-sm-inline">{{ __("Labels") }}</span>
 							</v-btn>
-							<v-btn value="designer" size="small" class="text-none">
+							<v-btn
+								value="designer"
+								size="small"
+								class="text-none"
+								:aria-label="__('Designer')"
+							>
 								<v-icon start>mdi-drag-variant</v-icon>
 								<span class="d-none d-sm-inline">{{ __("Designer") }}</span>
 							</v-btn>
 						</v-btn-toggle>
-						<v-btn
-							icon="mdi-truck-delivery"
-							variant="text"
-							color="white"
-							@click="ssccDialog = true"
-							:title="__('Generate SSCC-18 Shipping Labels')"
-							:aria-label="__('Generate SSCC-18 shipping labels')"
-						></v-btn>
-						<v-btn
-							icon="mdi-verified"
-							variant="text"
-							color="white"
-							@click="verificationDialog = true"
-							:title="__('Barcode Verification')"
-							:aria-label="__('Verify printed barcodes')"
-						></v-btn>
-						<v-menu>
+						<template v-if="!isMobileLayout">
+							<v-btn
+								icon="mdi-truck-delivery"
+								variant="text"
+								color="white"
+								@click="ssccDialog = true"
+								:title="__('Generate SSCC-18 Shipping Labels')"
+								:aria-label="__('Generate SSCC-18 shipping labels')"
+							></v-btn>
+							<v-btn
+								icon="mdi-verified"
+								variant="text"
+								color="white"
+								@click="verificationDialog = true"
+								:title="__('Barcode Verification')"
+								:aria-label="__('Verify printed barcodes')"
+							></v-btn>
+							<v-menu>
+								<template v-slot:activator="{ props }">
+									<v-btn
+										v-bind="props"
+										icon="mdi-download"
+										variant="text"
+										color="white"
+										:title="__('Export labels')"
+										:aria-label="__('Export labels')"
+									></v-btn>
+								</template>
+								<v-list density="compact">
+									<v-list-item @click="onExportPng" :disabled="!items.length">
+										<template v-slot:prepend><v-icon>mdi-image</v-icon></template>
+										<v-list-item-title>{{ __("PNG") }}</v-list-item-title>
+										<v-list-item-subtitle>{{
+											__("Render labels as PNG image")
+										}}</v-list-item-subtitle>
+									</v-list-item>
+									<v-list-item @click="onExportSvg" :disabled="!items.length">
+										<template v-slot:prepend><v-icon>mdi-svg</v-icon></template>
+										<v-list-item-title>{{ __("SVG") }}</v-list-item-title>
+										<v-list-item-subtitle>{{
+											__("Export as SVG with embedded barcodes")
+										}}</v-list-item-subtitle>
+									</v-list-item>
+									<v-list-item @click="onExportCsv" :disabled="!items.length">
+										<template v-slot:prepend
+											><v-icon>mdi-file-delimited</v-icon></template
+										>
+										<v-list-item-title>{{ __("CSV") }}</v-list-item-title>
+										<v-list-item-subtitle>{{
+											__("Item data as spreadsheet")
+										}}</v-list-item-subtitle>
+									</v-list-item>
+								</v-list>
+							</v-menu>
+							<v-btn
+								icon="mdi-package-variant-closed"
+								variant="text"
+								color="white"
+								@click="importDialog = true"
+								:title="__('Import from Document')"
+								:aria-label="__('Import items from Sales Order, Delivery Note or BOM')"
+							></v-btn>
+							<v-btn
+								icon="mdi-upload"
+								variant="text"
+								color="white"
+								@click="bulkImportDialog = true"
+								:title="__('Bulk Import')"
+								:aria-label="__('Bulk import barcode items')"
+							></v-btn>
+							<v-btn
+								icon="mdi-delete"
+								variant="text"
+								color="white"
+								@click="clearAll"
+								:title="__('Clear All')"
+								:aria-label="__('Clear all barcode items')"
+							></v-btn>
+						</template>
+						<v-menu v-else location="bottom end">
 							<template v-slot:activator="{ props }">
 								<v-btn
 									v-bind="props"
-									icon="mdi-download"
+									icon="mdi-dots-vertical"
 									variant="text"
 									color="white"
-									:title="__('Export labels')"
-									:aria-label="__('Export labels')"
+									:aria-label="__('More barcode printing actions')"
 								></v-btn>
 							</template>
 							<v-list density="compact">
-								<v-list-item @click="onExportPng" :disabled="!items.length">
-									<template v-slot:prepend><v-icon>mdi-image</v-icon></template>
-									<v-list-item-title>{{ __("PNG") }}</v-list-item-title>
-									<v-list-item-subtitle>{{ __("Render labels as PNG image") }}</v-list-item-subtitle>
-								</v-list-item>
-								<v-list-item @click="onExportSvg" :disabled="!items.length">
-									<template v-slot:prepend><v-icon>mdi-svg</v-icon></template>
-									<v-list-item-title>{{ __("SVG") }}</v-list-item-title>
-									<v-list-item-subtitle>{{ __("Export as SVG with embedded barcodes") }}</v-list-item-subtitle>
-								</v-list-item>
-								<v-list-item @click="onExportCsv" :disabled="!items.length">
-									<template v-slot:prepend><v-icon>mdi-file-delimited</v-icon></template>
-									<v-list-item-title>{{ __("CSV") }}</v-list-item-title>
-									<v-list-item-subtitle>{{ __("Item data as spreadsheet") }}</v-list-item-subtitle>
-								</v-list-item>
+								<v-list-item
+									prepend-icon="mdi-truck-delivery"
+									:title="__('SSCC-18 labels')"
+									@click="ssccDialog = true"
+								></v-list-item>
+								<v-list-item
+									prepend-icon="mdi-verified"
+									:title="__('Barcode verification')"
+									@click="verificationDialog = true"
+								></v-list-item>
+								<v-divider></v-divider>
+								<v-list-subheader>{{ __("Export") }}</v-list-subheader>
+								<v-list-item
+									prepend-icon="mdi-image"
+									:title="__('PNG')"
+									:disabled="!items.length"
+									@click="onExportPng"
+								></v-list-item>
+								<v-list-item
+									prepend-icon="mdi-svg"
+									:title="__('SVG')"
+									:disabled="!items.length"
+									@click="onExportSvg"
+								></v-list-item>
+								<v-list-item
+									prepend-icon="mdi-file-delimited"
+									:title="__('CSV')"
+									:disabled="!items.length"
+									@click="onExportCsv"
+								></v-list-item>
+								<v-divider></v-divider>
+								<v-list-item
+									prepend-icon="mdi-package-variant-closed"
+									:title="__('Import from document')"
+									@click="importDialog = true"
+								></v-list-item>
+								<v-list-item
+									prepend-icon="mdi-upload"
+									:title="__('Bulk import')"
+									@click="bulkImportDialog = true"
+								></v-list-item>
+								<v-list-item
+									prepend-icon="mdi-delete"
+									:title="__('Clear all')"
+									:disabled="!items.length"
+									@click="clearAll"
+								></v-list-item>
 							</v-list>
 						</v-menu>
-						<v-btn
-							icon="mdi-package-variant-closed"
-							variant="text"
-							color="white"
-							@click="importDialog = true"
-							:title="__('Import from Document')"
-							:aria-label="__('Import items from Sales Order, Delivery Note or BOM')"
-						></v-btn>
-						<v-btn
-							icon="mdi-upload"
-							variant="text"
-							color="white"
-							@click="bulkImportDialog = true"
-							:title="__('Bulk Import')"
-							:aria-label="__('Bulk import barcode items')"
-						></v-btn>
-						<v-btn
-							icon="mdi-delete"
-							variant="text"
-							color="white"
-							@click="clearAll"
-							:title="__('Clear All')"
-							:aria-label="__('Clear all barcode items')"
-						></v-btn>
 					</v-card-title>
 
-					<v-card-text v-if="viewMode === 'labels'" class="flex-grow-1 overflow-y-auto pa-4">
-						<!-- Configuration -->
-						<v-row dense class="mb-2 align-center">
-							<v-col cols="12" md="2">
-								<v-select
-									v-model="pageFormat"
-									:items="PAGE_FORMAT_PRESETS"
-									:label="__('Page Format')"
-									item-title="label"
-									item-value="value"
-									density="compact"
-									variant="outlined"
-									hide-details
-									class="pos-themed-input"
-								></v-select>
-							</v-col>
-							<v-col v-if="pageFormat === 'A4'" cols="6" md="1">
-								<v-text-field
-									v-model.number="gridCols"
-									:label="__('Cols')"
-									type="number"
-									density="compact"
-									variant="outlined"
-									hide-details
-									class="pos-themed-input"
-									min="1"
-								></v-text-field>
-							</v-col>
-							<v-col v-if="pageFormat === 'A4'" cols="6" md="1">
-								<v-text-field
-									v-model.number="gridRows"
-									:label="__('Rows')"
-									type="number"
-									density="compact"
-									variant="outlined"
-									hide-details
-									class="pos-themed-input"
-									min="1"
-								></v-text-field>
-							</v-col>
-							<v-col cols="12" md="2">
-								<v-select
-									v-model="symbology"
-									:items="symbologyOptions"
-									:label="__('Symbology')"
-									density="compact"
-									variant="outlined"
-									hide-details
-									class="pos-themed-input"
-								></v-select>
-							</v-col>
-							<v-col cols="12" md="1">
-								<v-select
-									v-model="outputFormat"
-									:items="['html', 'zpl', 'epl']"
-									:label="__('Output')"
-									density="compact"
-									variant="outlined"
-									hide-details
-									class="pos-themed-input"
-								></v-select>
-							</v-col>
-							<v-col cols="12" md="1">
-								<v-select
-									v-model="printerDpi"
-									:items="[
-										{ title: '96 DPI (Browser)', value: 96 },
-										{ title: '203 DPI (Thermal)', value: 203 },
-										{ title: '300 DPI (High)', value: 300 },
-									]"
-									:label="__('DPI')"
-									density="compact"
-									variant="outlined"
-									hide-details
-									class="pos-themed-input"
-								></v-select>
-							</v-col>
-							<v-col cols="12" md="4" class="d-flex gap-2">
-								<v-tooltip :text="__('Preview labels before printing')" location="top">
-									<template v-slot:activator="{ props }">
-										<v-btn
-											v-bind="props"
-											color="info"
-											variant="text"
-											height="40"
-											@click="openPreview"
-											:disabled="!items.length"
-										>
-											<v-icon>mdi-eye</v-icon>
-										</v-btn>
-									</template>
-								</v-tooltip>
-								<v-btn
-									color="secondary"
-									class="flex-grow-1 mr-1"
-									height="40"
-									@click="downloadPdf(items)"
-									:disabled="!items.length"
-								>
-									<v-icon start class="mr-2">mdi-file-pdf-box</v-icon>
-									{{ __("PDF") }}
-								</v-btn>
-								<v-btn
-									color="primary"
-									class="flex-grow-1 ml-1"
-									height="40"
-									@click="printLabels(items)"
-									:disabled="!items.length"
-								>
-									<v-icon start class="mr-2">mdi-printer</v-icon>
-									{{ __("Print") }}
-								</v-btn>
-								<v-tooltip :text="__('Print via QZ Tray thermal printer')" location="top">
-									<template v-slot:activator="{ props }">
-										<v-btn
-											v-bind="props"
-											color="deep-purple-accent-3"
-											class="flex-grow-1 ml-1"
-											height="40"
-											@click="thermalPrint"
-											:disabled="!items.length || !qzThermalAvailable"
-											:loading="thermalPrinting"
-										>
-											<v-icon start class="mr-2">mdi-fire</v-icon>
-											{{ __("Thermal") }}
-										</v-btn>
-									</template>
-								</v-tooltip>
-							</v-col>
-						</v-row>
+					<v-card-text
+						v-if="viewMode === 'labels'"
+						class="flex-grow-1 overflow-y-auto pa-4 barcode-labels-body"
+					>
+						<div v-if="isMobileLayout" class="barcode-mobile-setup">
+							<div class="barcode-mobile-setup__copy">
+								<span class="barcode-mobile-setup__eyebrow">{{ __("Label setup") }}</span>
+								<div class="barcode-mobile-setup__chips">
+									<v-chip size="x-small" variant="tonal" color="primary">
+										{{ pageFormatSummary }}
+									</v-chip>
+									<v-chip size="x-small" variant="tonal">
+										{{ symbology }}
+									</v-chip>
+									<v-chip size="x-small" variant="tonal">
+										{{ outputFormat.toUpperCase() }} · {{ printerDpi }} DPI
+									</v-chip>
+								</div>
+							</div>
+							<v-btn
+								size="small"
+								variant="outlined"
+								:prepend-icon="mobileSettingsOpen ? 'mdi-chevron-up' : 'mdi-tune'"
+								@click="mobileSettingsOpen = !mobileSettingsOpen"
+							>
+								{{ mobileSettingsOpen ? __("Hide") : __("Setup") }}
+							</v-btn>
+						</div>
 
-						<v-row dense class="mb-2">
-							<v-col cols="12" md="4">
-						<v-checkbox
-									v-model="includePrice"
-									:label="__('Include Price')"
-									density="compact"
-									hide-details
-									color="primary"
-								></v-checkbox>
-							</v-col>
-							<v-col cols="12" md="2">
-								<v-checkbox
-									v-model="serializationEnabled"
-									:label="__('Serialization')"
-									density="compact"
-									hide-details
-									color="primary"
-								></v-checkbox>
-							</v-col>
-							<v-col cols="12" md="2">
-								<v-checkbox
-									v-model="rfidEnabled"
-									:label="__('RFID Encode')"
-									density="compact"
-									hide-details
-									color="primary"
-									:disabled="outputFormat !== 'zpl'"
-								></v-checkbox>
-							</v-col>
-							<v-col cols="12" md="2" v-if="rfidEnabled">
-								<v-text-field
-									v-model="rfidEpcPrefix"
-									:label="__('EPC Prefix (Hex)')"
-									density="compact"
-									variant="outlined"
-									hide-details
-									class="pos-themed-input"
-									placeholder="303402B4DD"
-								></v-text-field>
-							</v-col>
-							<v-col cols="12" md="2">
-								<v-checkbox
-									v-model="includeBatchSerial"
-									:label="__('Include Batch / Serial')"
-									density="compact"
-									hide-details
-									color="primary"
-								></v-checkbox>
-							</v-col>
-							<v-col cols="12" md="4">
-								<v-checkbox
-									v-model="includeWarehouseLocation"
-									:label="__('Include Warehouse Location')"
-									density="compact"
-									hide-details
-									color="primary"
-								></v-checkbox>
-							</v-col>
-						</v-row>
+						<div v-show="!isMobileLayout || mobileSettingsOpen" class="barcode-settings-block">
+							<!-- Configuration -->
+							<v-row dense class="mb-2 align-center barcode-config-row">
+								<v-col cols="6" md="2">
+									<v-select
+										v-model="pageFormat"
+										:items="PAGE_FORMAT_PRESETS"
+										:label="__('Page Format')"
+										item-title="label"
+										item-value="value"
+										density="compact"
+										variant="outlined"
+										hide-details
+										class="pos-themed-input"
+									></v-select>
+								</v-col>
+								<v-col v-if="pageFormat === 'A4'" cols="6" md="1">
+									<v-text-field
+										v-model.number="gridCols"
+										:label="__('Cols')"
+										type="number"
+										density="compact"
+										variant="outlined"
+										hide-details
+										class="pos-themed-input"
+										min="1"
+									></v-text-field>
+								</v-col>
+								<v-col v-if="pageFormat === 'A4'" cols="6" md="1">
+									<v-text-field
+										v-model.number="gridRows"
+										:label="__('Rows')"
+										type="number"
+										density="compact"
+										variant="outlined"
+										hide-details
+										class="pos-themed-input"
+										min="1"
+									></v-text-field>
+								</v-col>
+								<v-col cols="6" md="2">
+									<v-select
+										v-model="symbology"
+										:items="symbologyOptions"
+										:label="__('Symbology')"
+										density="compact"
+										variant="outlined"
+										hide-details
+										class="pos-themed-input"
+									></v-select>
+								</v-col>
+								<v-col cols="6" md="1">
+									<v-select
+										v-model="outputFormat"
+										:items="['html', 'zpl', 'epl']"
+										:label="__('Output')"
+										density="compact"
+										variant="outlined"
+										hide-details
+										class="pos-themed-input"
+									></v-select>
+								</v-col>
+								<v-col cols="6" md="1">
+									<v-select
+										v-model="printerDpi"
+										:items="[
+											{ title: '96 DPI (Browser)', value: 96 },
+											{ title: '203 DPI (Thermal)', value: 203 },
+											{ title: '300 DPI (High)', value: 300 },
+										]"
+										:label="__('DPI')"
+										density="compact"
+										variant="outlined"
+										hide-details
+										class="pos-themed-input"
+									></v-select>
+								</v-col>
+								<v-col
+									v-if="!isMobileLayout"
+									cols="12"
+									md="4"
+									class="d-flex gap-2 flex-wrap barcode-config-actions"
+								>
+									<v-tooltip :text="__('Preview labels before printing')" location="top">
+										<template v-slot:activator="{ props }">
+											<v-btn
+												v-bind="props"
+												color="info"
+												variant="text"
+												height="40"
+												@click="openPreview"
+												:disabled="!items.length"
+											>
+												<v-icon>mdi-eye</v-icon>
+											</v-btn>
+										</template>
+									</v-tooltip>
+									<v-btn
+										color="secondary"
+										class="flex-grow-1 mr-1"
+										height="40"
+										@click="downloadPdf(items)"
+										:disabled="!items.length"
+									>
+										<v-icon start class="mr-2">mdi-file-pdf-box</v-icon>
+										{{ __("PDF") }}
+									</v-btn>
+									<v-btn
+										color="primary"
+										class="flex-grow-1 ml-1"
+										height="40"
+										@click="printLabels(items)"
+										:disabled="!items.length"
+									>
+										<v-icon start class="mr-2">mdi-printer</v-icon>
+										{{ __("Print") }}
+									</v-btn>
+									<v-tooltip :text="__('Print via QZ Tray thermal printer')" location="top">
+										<template v-slot:activator="{ props }">
+											<v-btn
+												v-bind="props"
+												color="deep-purple-accent-3"
+												class="flex-grow-1 ml-1"
+												height="40"
+												@click="thermalPrint"
+												:disabled="!items.length || !qzThermalAvailable"
+												:loading="thermalPrinting"
+											>
+												<v-icon start class="mr-2">mdi-fire</v-icon>
+												{{ __("Thermal") }}
+											</v-btn>
+										</template>
+									</v-tooltip>
+								</v-col>
+							</v-row>
+
+							<v-row dense class="mb-2 barcode-option-row">
+								<v-col cols="6" md="4">
+									<v-checkbox
+										v-model="includePrice"
+										:label="__('Include Price')"
+										density="compact"
+										hide-details
+										color="primary"
+									></v-checkbox>
+								</v-col>
+								<v-col cols="6" md="2">
+									<v-checkbox
+										v-model="serializationEnabled"
+										:label="__('Serialization')"
+										density="compact"
+										hide-details
+										color="primary"
+									></v-checkbox>
+								</v-col>
+								<v-col cols="6" md="2">
+									<v-checkbox
+										v-model="rfidEnabled"
+										:label="__('RFID Encode')"
+										density="compact"
+										hide-details
+										color="primary"
+										:disabled="outputFormat !== 'zpl'"
+									></v-checkbox>
+								</v-col>
+								<v-col cols="12" md="2" v-if="rfidEnabled">
+									<v-text-field
+										v-model="rfidEpcPrefix"
+										:label="__('EPC Prefix (Hex)')"
+										density="compact"
+										variant="outlined"
+										hide-details
+										class="pos-themed-input"
+										placeholder="303402B4DD"
+									></v-text-field>
+								</v-col>
+								<v-col cols="6" md="2">
+									<v-checkbox
+										v-model="includeBatchSerial"
+										:label="__('Include Batch / Serial')"
+										density="compact"
+										hide-details
+										color="primary"
+									></v-checkbox>
+								</v-col>
+								<v-col cols="6" md="4">
+									<v-checkbox
+										v-model="includeWarehouseLocation"
+										:label="__('Include Warehouse Location')"
+										density="compact"
+										hide-details
+										color="primary"
+									></v-checkbox>
+								</v-col>
+							</v-row>
+						</div>
 
 						<v-alert
 							v-if="sizeWarnings.length"
@@ -305,13 +468,15 @@
 							type="info"
 							density="compact"
 							variant="tonal"
-							class="mb-2"
+							class="mb-2 barcode-template-alert"
 							closable
 							@click:close="clearDesignerTemplate"
 						>
-							<div class="d-flex align-center">
+							<div class="d-flex align-center barcode-template-alert__body">
 								<v-icon start>mdi-ruler-square</v-icon>
-								<span>{{ __("Designer template active — labels render from canvas layout") }}</span>
+								<span>{{
+									__("Designer template active — labels render from canvas layout")
+								}}</span>
 								<v-btn
 									variant="text"
 									size="small"
@@ -337,6 +502,7 @@
 
 						<!-- Items List -->
 						<v-data-table
+							v-if="!isMobileLayout"
 							:headers="headers"
 							:items="items"
 							density="compact"
@@ -421,17 +587,28 @@
 											@update:modelValue="(v) => selectBarcode(item, v)"
 										>
 											<template v-slot:item="{ props, item: bcItem }">
-												<v-list-item v-bind="props" :subtitle="bcItem.raw.barcode_type || ''"></v-list-item>
+												<v-list-item
+													v-bind="props"
+													:subtitle="bcItem.raw.barcode_type || ''"
+												></v-list-item>
 											</template>
 										</v-select>
 									</template>
 									<span v-else class="text-caption">
 										{{ item.barcode }}
-										<v-chip v-if="getBarcodeTypeLabel(item)" size="x-small" variant="outlined" class="ml-1">{{ getBarcodeTypeLabel(item) }}</v-chip>
+										<v-chip
+											v-if="getBarcodeTypeLabel(item)"
+											size="x-small"
+											variant="outlined"
+											class="ml-1"
+											>{{ getBarcodeTypeLabel(item) }}</v-chip
+										>
 									</span>
 									<v-tooltip v-if="validateBarcodeItem(item)" location="top">
 										<template v-slot:activator="{ props }">
-											<v-icon v-bind="props" color="error" size="small">mdi-alert-circle</v-icon>
+											<v-icon v-bind="props" color="error" size="small"
+												>mdi-alert-circle</v-icon
+											>
 										</template>
 										<span>{{ validateBarcodeItem(item) }}</span>
 									</v-tooltip>
@@ -489,58 +666,376 @@
 								></v-btn>
 							</template>
 						</v-data-table>
-					</v-card-text>
-					<v-card-text v-else class="flex-grow-1 pa-0 d-flex flex-column overflow-hidden">
-						<div class="d-flex flex-grow-1" style="min-height: 0;">
-							<div class="flex-grow-1 overflow-hidden">
-								<LabelDesigner :designer="designer" @select="(id) => designer.selectObject(id)" @dblclick="() => {}" />
+
+						<div v-if="isMobileLayout" class="barcode-mobile-queue">
+							<div class="barcode-mobile-queue__header">
+								<div>
+									<span class="barcode-mobile-queue__eyebrow">{{ __("Print queue") }}</span>
+									<strong>
+										{{
+											totalLabelCount === 1
+												? __("1 label")
+												: __("{0} labels", [String(totalLabelCount)])
+										}}
+									</strong>
+								</div>
+								<v-btn
+									v-if="items.length"
+									size="small"
+									variant="text"
+									color="error"
+									prepend-icon="mdi-delete-outline"
+									@click="clearAll"
+								>
+									{{ __("Clear") }}
+								</v-btn>
 							</div>
-							<div style="width: 260px; flex-shrink: 0;">
-								<LabelDesignerPanel :object="designer.selectedObject.value" @change="onDesignerObjectChange" @uploadImage="onUploadImage" />
+
+							<div v-if="!items.length" class="barcode-mobile-queue__empty">
+								<v-icon size="42" color="medium-emphasis">mdi-barcode-off</v-icon>
+								<strong>{{ __("No labels queued") }}</strong>
+								<span>{{ __("Switch to Items and add products with barcodes.") }}</span>
+								<v-btn
+									color="primary"
+									variant="tonal"
+									prepend-icon="mdi-magnify"
+									@click="mobilePane = 'items'"
+								>
+									{{ __("Browse items") }}
+								</v-btn>
+							</div>
+
+							<div v-else class="barcode-mobile-queue__list">
+								<article
+									v-for="item in items"
+									:key="item._row_id || item.item_code"
+									class="barcode-queue-card"
+								>
+									<div class="barcode-queue-card__head">
+										<div class="barcode-queue-card__identity">
+											<strong>{{ item.item_name || item.item_code }}</strong>
+											<span>{{ item.item_code }}</span>
+										</div>
+										<v-btn
+											icon="mdi-delete-outline"
+											size="small"
+											variant="text"
+											color="error"
+											:aria-label="__('Remove barcode item')"
+											@click="removeItem(item)"
+										></v-btn>
+									</div>
+
+									<div class="barcode-queue-card__barcode">
+										<v-icon size="18" color="primary">mdi-barcode</v-icon>
+										<template v-if="item.barcode">
+											<v-select
+												v-if="getAvailableBarcodes(item).length > 1"
+												v-model="item.barcode"
+												:items="getAvailableBarcodes(item)"
+												item-title="barcode"
+												item-value="barcode"
+												density="compact"
+												variant="outlined"
+												hide-details
+												class="pos-themed-input barcode-queue-card__barcode-select"
+												@update:modelValue="(v) => selectBarcode(item, v)"
+											>
+												<template v-slot:item="{ props, item: bcItem }">
+													<v-list-item
+														v-bind="props"
+														:subtitle="bcItem.raw.barcode_type || ''"
+													></v-list-item>
+												</template>
+											</v-select>
+											<span v-else class="barcode-queue-card__barcode-value">
+												{{ item.barcode }}
+											</span>
+											<v-chip
+												v-if="getBarcodeTypeLabel(item)"
+												size="x-small"
+												variant="outlined"
+											>
+												{{ getBarcodeTypeLabel(item) }}
+											</v-chip>
+											<v-tooltip v-if="validateBarcodeItem(item)" location="top">
+												<template v-slot:activator="{ props }">
+													<v-icon v-bind="props" color="error" size="small"
+														>mdi-alert-circle</v-icon
+													>
+												</template>
+												<span>{{ validateBarcodeItem(item) }}</span>
+											</v-tooltip>
+										</template>
+										<span v-else class="text-error text-caption">{{
+											__("No Barcode")
+										}}</span>
+									</div>
+
+									<div class="barcode-queue-card__fields">
+										<div class="barcode-queue-card__metric">
+											<span>{{ __("Price") }}</span>
+											<strong>{{ formatCurrency(item.price) }}</strong>
+										</div>
+
+										<v-select
+											v-if="getItemUomOptions(item).length"
+											v-model="item.uom"
+											:items="getItemUomOptions(item)"
+											label="UOM"
+											density="compact"
+											variant="outlined"
+											hide-details
+											class="pos-themed-input barcode-queue-card__uom"
+											@update:modelValue="onItemUomChange(item)"
+										></v-select>
+
+										<div
+											class="barcode-queue-card__metric barcode-queue-card__metric--qty"
+										>
+											<span>{{ __("Quantity") }}</span>
+											<div class="pos-table__qty-counter">
+												<v-btn
+													size="small"
+													variant="flat"
+													class="pos-table__qty-btn pos-table__qty-btn--minus minus-btn qty-control-btn"
+													@click="decrementQty(item)"
+													:aria-label="__('Decrease quantity')"
+												>
+													<v-icon size="small">mdi-minus</v-icon>
+												</v-btn>
+												<div
+													v-if="!item._editingQty"
+													class="pos-table__qty-display amount-value"
+													@click="openQtyEdit(item)"
+													tabindex="0"
+													role="button"
+													:aria-label="__('Edit quantity')"
+												>
+													{{ item.qty }}
+												</div>
+												<v-text-field
+													v-else
+													v-model="editingQtyValue"
+													density="compact"
+													variant="outlined"
+													class="pos-table__qty-input"
+													@blur="closeQtyEdit(item)"
+													@keydown.enter.prevent="closeQtyEdit(item)"
+													@click.stop
+													:id="'qty-input-' + item._row_id"
+													:autofocus="true"
+													type="number"
+													hide-details
+												></v-text-field>
+												<v-btn
+													size="small"
+													variant="flat"
+													class="pos-table__qty-btn pos-table__qty-btn--plus plus-btn qty-control-btn"
+													@click="incrementQty(item)"
+													:aria-label="__('Increase quantity')"
+												>
+													<v-icon size="small">mdi-plus</v-icon>
+												</v-btn>
+											</div>
+										</div>
+
+										<v-text-field
+											v-if="shouldShowScaleGramsInput(item)"
+											v-model.number="item.scale_grams"
+											:label="__('Weight (g)')"
+											density="compact"
+											variant="outlined"
+											hide-details
+											type="number"
+											min="1"
+											step="1"
+											class="pos-themed-input barcode-queue-card__weight"
+											@blur="onItemScaleGramsChange(item)"
+											@keydown.enter.prevent="onItemScaleGramsChange(item)"
+										></v-text-field>
+
+										<v-autocomplete
+											v-if="includeWarehouseLocation"
+											v-model="item.warehouseLocation"
+											:items="warehouseOptions"
+											item-title="warehouse_name"
+											item-value="name"
+											:label="__('Location')"
+											density="compact"
+											variant="outlined"
+											hide-details
+											class="pos-themed-input barcode-queue-card__location"
+											clearable
+										></v-autocomplete>
+									</div>
+
+									<div class="barcode-queue-card__footer">
+										<v-btn
+											size="small"
+											variant="text"
+											color="primary"
+											prepend-icon="mdi-variable"
+											@click="openVariableDataDialog(item)"
+										>
+											{{ __("Variable data") }}
+										</v-btn>
+									</div>
+								</article>
 							</div>
 						</div>
-						<div class="d-flex justify-space-between pa-2 ga-2 border-t align-center">
-							<div class="d-flex ga-2">
+					</v-card-text>
+
+					<v-card-text v-else class="flex-grow-1 pa-0 d-flex flex-column overflow-hidden">
+						<div class="d-flex flex-grow-1 barcode-designer-body" style="min-height: 0">
+							<div class="flex-grow-1 overflow-hidden barcode-designer-canvas">
+								<LabelDesigner
+									:designer="designer"
+									@select="(id) => designer.selectObject(id)"
+									@dblclick="() => {}"
+								/>
+							</div>
+							<div class="barcode-designer-panel" style="width: 260px; flex-shrink: 0">
+								<LabelDesignerPanel
+									:object="designer.selectedObject.value"
+									@change="onDesignerObjectChange"
+									@uploadImage="onUploadImage"
+								/>
+							</div>
+						</div>
+						<div
+							class="d-flex justify-space-between pa-2 ga-2 border-t align-center barcode-designer-actions"
+						>
+							<div class="d-flex ga-2 barcode-designer-actions__group">
 								<v-btn variant="text" @click="viewMode = 'labels'">
 									<v-icon start>mdi-arrow-left</v-icon>
 									{{ __("Back to Labels") }}
 								</v-btn>
-								<v-btn variant="outlined" prepend-icon="mdi-upload" @click="importDesignerLayout">
+								<v-btn
+									variant="outlined"
+									prepend-icon="mdi-upload"
+									@click="importDesignerLayout"
+								>
 									{{ __("Import Layout") }}
 								</v-btn>
 							</div>
-							<div class="d-flex ga-2">
-								<v-btn color="primary" variant="outlined" prepend-icon="mdi-content-save-outline" @click="saveTemplateDialog = true">
+							<div class="d-flex ga-2 barcode-designer-actions__group">
+								<v-btn
+									color="primary"
+									variant="outlined"
+									prepend-icon="mdi-content-save-outline"
+									@click="saveTemplateDialog = true"
+								>
 									{{ __("Save Template") }}
 								</v-btn>
-								<v-btn color="primary" variant="outlined" prepend-icon="mdi-folder-open-outline" @click="templateLibraryDialog = true">
+								<v-btn
+									color="primary"
+									variant="outlined"
+									prepend-icon="mdi-folder-open-outline"
+									@click="templateLibraryDialog = true"
+								>
 									{{ __("Load Template") }}
 								</v-btn>
-								<v-btn color="success" variant="flat" prepend-icon="mdi-check" @click="applyDesignerTemplate">
+								<v-btn
+									color="success"
+									variant="flat"
+									prepend-icon="mdi-check"
+									@click="applyDesignerTemplate"
+								>
 									<v-badge v-if="hasActiveTemplate" dot color="warning" inline></v-badge>
 									{{ hasActiveTemplate ? __("Update Template") : __("Use as Template") }}
 								</v-btn>
-								<v-btn color="primary" variant="outlined" prepend-icon="mdi-content-save" @click="exportDesignerLayout">
+								<v-btn
+									color="primary"
+									variant="outlined"
+									prepend-icon="mdi-content-save"
+									@click="exportDesignerLayout"
+								>
 									{{ __("Export") }}
 								</v-btn>
 							</div>
 						</div>
 					</v-card-text>
+
+					<div v-if="isMobileLayout && viewMode === 'labels'" class="barcode-mobile-printbar">
+						<v-btn variant="text" color="info" :disabled="!items.length" @click="openPreview">
+							<v-icon size="20">mdi-eye-outline</v-icon>
+							<span>{{ __("Preview") }}</span>
+						</v-btn>
+						<v-btn
+							variant="tonal"
+							color="secondary"
+							:disabled="!items.length"
+							@click="downloadPdf(items)"
+						>
+							<v-icon size="20">mdi-file-pdf-box</v-icon>
+							<span>{{ __("PDF") }}</span>
+						</v-btn>
+						<v-btn
+							variant="flat"
+							color="primary"
+							:disabled="!items.length"
+							@click="printLabels(items)"
+						>
+							<v-icon size="20">mdi-printer</v-icon>
+							<span>{{ __("Print") }}</span>
+						</v-btn>
+						<v-btn
+							variant="text"
+							color="deep-purple-accent-3"
+							:disabled="!items.length || !qzThermalAvailable"
+							:loading="thermalPrinting"
+							@click="thermalPrint"
+						>
+							<v-icon size="20">mdi-fire</v-icon>
+							<span>{{ __("Thermal") }}</span>
+						</v-btn>
+					</div>
 				</v-card>
 			</v-col>
 		</v-row>
 
+		<div v-if="isMobileLayout && mobilePane === 'items'" class="barcode-mobile-items-bar">
+			<v-btn block color="primary" size="large" @click="mobilePane = 'workspace'">
+				<v-icon start>mdi-printer-outline</v-icon>
+				<span>{{ __("Review print queue") }}</span>
+				<span v-if="totalLabelCount" class="barcode-mobile-items-bar__count">
+					{{ totalLabelCount }}
+				</span>
+			</v-btn>
+		</div>
+
 		<!-- Save Template Dialog -->
-		<v-dialog v-model="saveTemplateDialog" max-width="450">
+		<v-dialog v-model="saveTemplateDialog" max-width="450" :fullscreen="isMobileLayout">
 			<v-card>
 				<v-card-title class="bg-primary text-white">{{ __("Save Label Template") }}</v-card-title>
 				<v-card-text class="pt-4">
-					<v-text-field v-model="saveTemplateTitle" :label="__('Template Title')" variant="outlined" density="compact" class="mb-3" autofocus></v-text-field>
-					<v-textarea v-model="saveTemplateDescription" :label="__('Description (optional)')" variant="outlined" density="compact" rows="2" class="mb-3"></v-textarea>
+					<v-text-field
+						v-model="saveTemplateTitle"
+						:label="__('Template Title')"
+						variant="outlined"
+						density="compact"
+						class="mb-3"
+						autofocus
+					></v-text-field>
+					<v-textarea
+						v-model="saveTemplateDescription"
+						:label="__('Description (optional)')"
+						variant="outlined"
+						density="compact"
+						rows="2"
+						class="mb-3"
+					></v-textarea>
 				</v-card-text>
 				<v-card-actions class="justify-end pa-4 pt-0">
 					<v-btn variant="text" @click="saveTemplateDialog = false">{{ __("Cancel") }}</v-btn>
-					<v-btn color="primary" variant="elevated" :loading="saveTemplateLoading" @click="onSaveTemplate">{{ __("Save") }}</v-btn>
+					<v-btn
+						color="primary"
+						variant="elevated"
+						:loading="saveTemplateLoading"
+						@click="onSaveTemplate"
+						>{{ __("Save") }}</v-btn
+					>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
@@ -620,7 +1115,7 @@
 			</v-card>
 		</v-dialog>
 		<!-- Variable Data Dialog -->
-		<v-dialog v-model="variableDataDialog" max-width="400">
+		<v-dialog v-model="variableDataDialog" max-width="400" :fullscreen="isMobileLayout">
 			<v-card v-if="variableDataItem">
 				<v-card-title class="bg-primary text-white">
 					{{ __("Variable Data") }}
@@ -699,41 +1194,79 @@
 				</v-card-text>
 				<v-card-actions class="justify-end">
 					<v-btn variant="text" @click="closeVariableDataDialog">{{ __("Cancel") }}</v-btn>
-					<v-btn color="primary" variant="elevated" @click="closeVariableDataDialog">{{ __("Save") }}</v-btn>
+					<v-btn color="primary" variant="elevated" @click="closeVariableDataDialog">{{
+						__("Save")
+					}}</v-btn>
 				</v-card-actions>
 			</v-card>
 		</v-dialog>
 		<!-- Bulk Import Dialog -->
-		<v-dialog v-model="bulkImportDialog" max-width="600">
+		<v-dialog v-model="bulkImportDialog" max-width="600" :fullscreen="isMobileLayout">
 			<v-card>
 				<v-card-title class="bg-primary text-white d-flex align-center">
 					<span>{{ __("Bulk Import") }}</span>
 					<v-spacer></v-spacer>
-					<v-btn icon="mdi-close" variant="text" color="white" @click="bulkImportDialog = false"></v-btn>
+					<v-btn
+						icon="mdi-close"
+						variant="text"
+						color="white"
+						@click="bulkImportDialog = false"
+					></v-btn>
 				</v-card-title>
 				<v-card-text class="pt-4">
-					<v-radio-group v-model="bulkImportFormat" inline hide-details density="compact" class="mb-2">
+					<v-radio-group
+						v-model="bulkImportFormat"
+						inline
+						hide-details
+						density="compact"
+						class="mb-2"
+					>
 						<v-radio :label="__('CSV')" value="csv"></v-radio>
 						<v-radio :label="__('JSON')" value="json"></v-radio>
 					</v-radio-group>
 					<v-textarea
 						v-model="bulkImportRaw"
-						:label="bulkImportFormat === 'csv' ? __('item_code, qty') : __('[{item_code:..., qty:...}]')"
+						:label="
+							bulkImportFormat === 'csv'
+								? __('item_code, qty')
+								: __('[{item_code:..., qty:...}]')
+						"
 						variant="outlined"
 						rows="6"
-						:hint="bulkImportFormat === 'csv' ? __('One per line: item_code, qty') : __('Array of objects with item_code, qty')"
+						:hint="
+							bulkImportFormat === 'csv'
+								? __('One per line: item_code, qty')
+								: __('Array of objects with item_code, qty')
+						"
 						persistent-hint
 					></v-textarea>
-					<v-alert v-if="bulkImportError" type="error" density="compact" variant="tonal" class="mb-2">
+					<v-alert
+						v-if="bulkImportError"
+						type="error"
+						density="compact"
+						variant="tonal"
+						class="mb-2"
+					>
 						{{ bulkImportError }}
 					</v-alert>
-					<v-alert v-if="bulkImportSuccess" type="success" density="compact" variant="tonal" class="mb-2">
+					<v-alert
+						v-if="bulkImportSuccess"
+						type="success"
+						density="compact"
+						variant="tonal"
+						class="mb-2"
+					>
 						{{ bulkImportSuccess }}
 					</v-alert>
 				</v-card-text>
 				<v-card-actions class="justify-end">
 					<v-btn variant="text" @click="bulkImportDialog = false">{{ __("Cancel") }}</v-btn>
-					<v-btn color="primary" variant="elevated" :loading="bulkImporting" @click="processBulkImport">
+					<v-btn
+						color="primary"
+						variant="elevated"
+						:loading="bulkImporting"
+						@click="processBulkImport"
+					>
 						{{ __("Import") }}
 					</v-btn>
 				</v-card-actions>
@@ -743,7 +1276,7 @@
 		<ImportSourceDialog v-model="importDialog" @import="onImportFromSource" />
 
 		<!-- SSCC-18 Shipping Label Generator Dialog -->
-		<v-dialog v-model="ssccDialog" max-width="550">
+		<v-dialog v-model="ssccDialog" max-width="550" :fullscreen="isMobileLayout">
 			<v-card>
 				<v-card-title class="bg-primary text-white d-flex align-center">
 					<span class="text-h6">{{ __("Generate SSCC-18 Shipping Labels") }}</span>
@@ -765,7 +1298,7 @@
 						<v-col cols="6" md="3">
 							<v-select
 								v-model="ssccExtensionDigit"
-								:items="['0','1','2','3','4','5','6','7','8','9']"
+								:items="['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']"
 								:label="__('Extension')"
 								variant="outlined"
 								density="compact"
@@ -817,11 +1350,17 @@
 							<v-divider class="mb-2"></v-divider>
 							<div class="text-subtitle-2 mb-1">{{ __("Generated SSCC-18 Codes") }}</div>
 							<v-list density="compact" class="border rounded">
-								<v-list-item v-for="(gen, idx) in ssccGeneratedItems" :key="idx" density="compact">
+								<v-list-item
+									v-for="(gen, idx) in ssccGeneratedItems"
+									:key="idx"
+									density="compact"
+								>
 									<template v-slot:prepend>
 										<v-icon color="primary">mdi-barcode</v-icon>
 									</template>
-									<v-list-item-title class="font-family-mono">{{ gen.human_readable }}</v-list-item-title>
+									<v-list-item-title class="font-family-mono">{{
+										gen.human_readable
+									}}</v-list-item-title>
 									<v-list-item-subtitle>{{ gen.sscc18 }}</v-list-item-subtitle>
 									<template v-slot:append>
 										<v-icon color="success" size="small">mdi-check-circle</v-icon>
@@ -831,15 +1370,31 @@
 						</v-col>
 					</v-row>
 				</v-card-text>
-				<v-card-actions class="justify-space-between pa-4 pt-0">
-					<div>
-						<v-btn v-if="ssccGeneratedItems.length" color="success" variant="elevated" prepend-icon="mdi-plus" @click="addSsccToQueue" class="mr-2">
+				<v-card-actions
+					class="justify-space-between pa-4 pt-0 barcode-dialog-actions barcode-sscc-actions"
+				>
+					<div class="barcode-dialog-actions__start">
+						<v-btn
+							v-if="ssccGeneratedItems.length"
+							color="success"
+							variant="elevated"
+							prepend-icon="mdi-plus"
+							@click="addSsccToQueue"
+							class="mr-2"
+						>
 							{{ __("Add {0} to Queue", [String(ssccGeneratedItems.length)]) }}
 						</v-btn>
 					</div>
-					<div>
-						<v-btn variant="text" @click="ssccDialog = false" class="mr-1">{{ __("Close") }}</v-btn>
-						<v-btn color="primary" variant="elevated" :loading="ssccGenerating" @click="generateSscc">
+					<div class="barcode-dialog-actions__end">
+						<v-btn variant="text" @click="ssccDialog = false" class="mr-1">{{
+							__("Close")
+						}}</v-btn>
+						<v-btn
+							color="primary"
+							variant="elevated"
+							:loading="ssccGenerating"
+							@click="generateSscc"
+						>
 							<v-icon start>mdi-barcode-scan</v-icon>
 							{{ __("Generate") }}
 						</v-btn>
@@ -850,7 +1405,7 @@
 
 		<!-- Label Preview Dialog -->
 		<v-dialog v-model="previewDialog" fullscreen>
-			<v-card v-if="previewContent" class="d-flex flex-column">
+			<v-card v-if="previewContent" class="d-flex flex-column barcode-preview-card">
 				<v-card-title class="bg-primary text-white d-flex align-center">
 					<span class="text-h6">{{ __("Label Preview") }}</span>
 					<v-spacer></v-spacer>
@@ -864,17 +1419,12 @@
 				<v-card-text class="flex-grow-1 pa-0 d-flex flex-column">
 					<iframe
 						:srcdoc="previewContent"
-						class="flex-grow-1"
-						style="width: 100%; border: none;"
+						class="flex-grow-1 barcode-preview-frame"
+						style="width: 100%; border: none"
 					></iframe>
 				</v-card-text>
-				<v-card-actions class="pa-4 justify-center">
-					<v-btn
-						color="primary"
-						size="large"
-						prepend-icon="mdi-printer"
-						@click="printFromPreview"
-					>
+				<v-card-actions class="pa-4 justify-center barcode-preview-actions">
+					<v-btn color="primary" size="large" prepend-icon="mdi-printer" @click="printFromPreview">
 						{{ __("Print") }}
 					</v-btn>
 					<v-btn
@@ -896,12 +1446,18 @@
 
 <script setup lang="ts">
 import { computed, watch, onMounted, onUnmounted, ref } from "vue";
+import { useResponsive } from "../../../composables/core/useResponsive";
 import ItemsSelector from "../items/ItemsSelector.vue";
 import { useItemsStore } from "../../../stores/itemsStore";
 import { useUIStore } from "../../../stores/uiStore";
 import { useToastStore } from "../../../stores/toastStore";
 import { useBarcodePrintQueue } from "../../../composables/pos/items/useBarcodePrintQueue";
-import { useBarcodePrintOutput, PAGE_FORMAT_PRESETS, validateBarcodeItem, getBarcodeTypeLabel } from "../../../composables/pos/items/useBarcodePrintOutput";
+import {
+	useBarcodePrintOutput,
+	PAGE_FORMAT_PRESETS,
+	validateBarcodeItem,
+	getBarcodeTypeLabel,
+} from "../../../composables/pos/items/useBarcodePrintOutput";
 import { useScaleBarcodeSettings } from "../../../composables/pos/items/useScaleBarcodeSettings";
 import { useLabelDesigner } from "../../../composables/pos/items/useLabelDesigner";
 import { useSsccGenerator } from "../../../composables/pos/items/useSsccGenerator";
@@ -944,21 +1500,21 @@ const {
 	getItemUomOptions,
 	getAvailableBarcodes,
 	selectBarcode,
-		variableDataDialog,
-		variableDataItem,
-		openVariableDataDialog,
-		closeVariableDataDialog,
-		warehouseOptions,
-		warehouseLoading,
-		getAvailableBatches,
-		getAvailableSerials,
-		onSelectBatch,
-		onSelectSerial,
-		importItems,
-		serializationEngine,
-		serializationEnabled,
-		cleanup: cleanupQueue,
-	} = printQueue;
+	variableDataDialog,
+	variableDataItem,
+	openVariableDataDialog,
+	closeVariableDataDialog,
+	warehouseOptions,
+	warehouseLoading,
+	getAvailableBatches,
+	getAvailableSerials,
+	onSelectBatch,
+	onSelectSerial,
+	importItems,
+	serializationEngine,
+	serializationEnabled,
+	cleanup: cleanupQueue,
+} = printQueue;
 
 const {
 	pageFormat,
@@ -998,6 +1554,20 @@ const bulkImportSuccess = ref("");
 
 const viewMode = ref<"labels" | "designer">("labels");
 const designer = useLabelDesigner();
+
+const { windowWidth } = useResponsive();
+const isMobileLayout = computed(() => windowWidth.value < 960);
+const mobilePane = ref<"items" | "workspace">("items");
+const mobileSettingsOpen = ref(false);
+const totalLabelCount = computed(() =>
+	items.value.reduce((total: number, item: any) => {
+		const qty = Math.round(Number(item.qty) || 1);
+		return total + Math.max(1, qty);
+	}, 0),
+);
+const pageFormatSummary = computed(
+	() => PAGE_FORMAT_PRESETS.find((preset) => preset.value === pageFormat.value)?.label || pageFormat.value,
+);
 
 // SSCC-18 generator state
 const ssccDialog = ref(false);
@@ -1079,10 +1649,12 @@ const processBulkImport = async () => {
 		} else {
 			const parsed = JSON.parse(raw);
 			if (!Array.isArray(parsed)) throw new Error("JSON must be an array");
-			entries = parsed.map((e) => ({
-				item_code: String(e.item_code || e.item || "").trim(),
-				qty: parseInt(e.qty || e.quantity || "1", 10) || 1,
-			})).filter((e) => e.item_code);
+			entries = parsed
+				.map((e) => ({
+					item_code: String(e.item_code || e.item || "").trim(),
+					qty: parseInt(e.qty || e.quantity || "1", 10) || 1,
+				}))
+				.filter((e) => e.item_code);
 		}
 
 		if (!entries.length) {
@@ -1125,7 +1697,7 @@ const processBulkImport = async () => {
 						args: {
 							items_data: JSON.stringify([{ item_code: entry.item_code }]),
 							pos_profile: JSON.stringify(uiStore.posProfile || {}),
-							price_list: (uiStore.posProfile)?.selling_price_list || "",
+							price_list: uiStore.posProfile?.selling_price_list || "",
 						},
 						silent: true,
 					});
@@ -1138,7 +1710,8 @@ const processBulkImport = async () => {
 								...details,
 								barcode:
 									details.barcode ||
-									(Array.isArray(details.item_barcode) && details.item_barcode[0]?.barcode) ||
+									(Array.isArray(details.item_barcode) &&
+										details.item_barcode[0]?.barcode) ||
 									"",
 								uom: details.uom || details.stock_uom || "",
 								qty,
@@ -1176,7 +1749,10 @@ const onImportFromSource = async (importedItems: any[]) => {
 		itemsToAdd = itemsToAdd.map((item: any) => {
 			const serial = item._generated_serials?.[0] || item.serial_no;
 			if (serial) {
-				const epcData = getEpcData({ ...item, serial_no: serial }, { enabled: true, epcPrefix: rfidEpcPrefix.value });
+				const epcData = getEpcData(
+					{ ...item, serial_no: serial },
+					{ enabled: true, epcPrefix: rfidEpcPrefix.value },
+				);
 				return { ...item, _epc_data: epcData };
 			}
 			return item;
@@ -1267,7 +1843,9 @@ const importDesignerLayout = () => {
 
 const applyDesignerTemplate = () => {
 	const json = designer.exportLayout();
-	try { JSON.parse(json); } catch {
+	try {
+		JSON.parse(json);
+	} catch {
 		useToastStore().show({ title: __("Invalid layout — cannot apply"), color: "error" });
 		return;
 	}
@@ -1288,7 +1866,9 @@ const onSaveTemplate = async () => {
 		return;
 	}
 	const layoutJson = designer.exportLayout();
-	try { JSON.parse(layoutJson); } catch {
+	try {
+		JSON.parse(layoutJson);
+	} catch {
 		useToastStore().show({ title: __("Invalid layout — cannot save"), color: "error" });
 		return;
 	}
@@ -1365,13 +1945,76 @@ const generateLabelsHtml = (items) => {
 <html>
 <head>
 	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style>${style}</style>
+	<style>
+		@media screen {
+			html,
+			body {
+				width: 100% !important;
+				height: auto !important;
+				min-height: 100% !important;
+				overflow: auto !important;
+				background: #eef2f7 !important;
+			}
+			body {
+				box-sizing: border-box;
+				margin: 0 !important;
+				padding: 12px !important;
+				display: flex;
+				flex-wrap: wrap;
+				align-items: flex-start;
+				justify-content: center;
+				gap: 12px;
+			}
+			.label-container {
+				width: 100%;
+				page-break-after: auto;
+			}
+			.label {
+				flex: 0 0 auto;
+				page-break-after: auto;
+				background: #fff;
+				box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+			}
+		}
+		@media screen and (max-width: 600px) {
+			body {
+				padding: 8px !important;
+				gap: 8px;
+			}
+		}
+	</style>
 </head>
 <body>
 	${content}
 	<script src="/assets/posawesome/dist/js/libs/JsBarcode.all.min.js"><\/script>
 	<script>
-		JsBarcode(".barcode").init();
+		try {
+			JsBarcode(".barcode").init();
+		} catch (error) {
+			console.warn("Barcode preview could not render every barcode", error);
+		}
+
+		(function () {
+			function fitLabels() {
+				var maxWidth = Math.max(160, document.documentElement.clientWidth - 16);
+				document.querySelectorAll(".label").forEach(function (label) {
+					label.style.zoom = "1";
+					var width = label.getBoundingClientRect().width;
+					if (width > maxWidth) {
+						label.style.zoom = (maxWidth / width).toFixed(3);
+					}
+				});
+			}
+			window.addEventListener("load", fitLabels);
+			window.addEventListener("resize", fitLabels);
+			if (document.readyState === "complete") {
+				fitLabels();
+			} else {
+				setTimeout(fitLabels, 80);
+			}
+		})();
 	<\/script>
 </body>
 </html>`;
@@ -1625,5 +2268,535 @@ onUnmounted(() => {
 	padding: 0;
 	min-height: 24px;
 	font-size: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Handheld / narrow portrait layout (Sunmi V3, 6.75", 720x1600)       */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 959.98px) {
+	.barcode-printing-page {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		min-height: 0;
+		overflow: hidden;
+		background: rgb(var(--v-theme-background));
+	}
+
+	.barcode-mobile-header {
+		display: flex;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		padding: 8px 10px;
+		border-bottom: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.28));
+		background: var(--pos-surface, rgb(var(--v-theme-surface)));
+		z-index: 2;
+	}
+
+	.barcode-mobile-header__copy {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		line-height: 1.2;
+	}
+
+	.barcode-mobile-header__title {
+		font-size: 0.95rem;
+		font-weight: 700;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.barcode-mobile-header__meta {
+		font-size: 0.68rem;
+		color: rgba(var(--v-theme-on-surface), 0.62);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.barcode-mobile-tabs {
+		flex: 0 0 auto;
+		max-width: 62%;
+	}
+
+	.barcode-mobile-tabs :deep(.v-btn) {
+		min-width: 0;
+		padding-inline: 8px;
+		text-transform: none;
+	}
+
+	.barcode-mobile-tabs :deep(.v-btn__content) {
+		font-size: 0.75rem;
+		white-space: nowrap;
+	}
+
+	.barcode-mobile-tab-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 18px;
+		height: 18px;
+		margin-inline-start: 4px;
+		padding-inline: 4px;
+		border-radius: 999px;
+		font-size: 0.65rem;
+		font-weight: 700;
+		line-height: 1;
+		background: rgba(var(--v-theme-primary), 0.16);
+		color: rgb(var(--v-theme-primary));
+	}
+
+	.barcode-printing-page > .v-row {
+		flex: 1 1 auto;
+		height: auto !important;
+		min-height: 0;
+		margin: 0 !important;
+	}
+
+	.barcode-pane-col {
+		height: 100% !important;
+		max-height: 100%;
+		min-height: 0;
+		padding: 0 !important;
+		border: 0 !important;
+	}
+
+	.barcode-pane-hidden {
+		display: none !important;
+	}
+
+	.barcode-pane-col--items {
+		overflow-x: hidden;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.barcode-pane-col--workspace {
+		overflow: hidden;
+	}
+
+	.barcode-pane-col--workspace > .v-card {
+		height: 100% !important;
+		min-height: 0;
+		border-radius: 0;
+	}
+
+	.barcode-workspace-title {
+		flex: 0 0 auto;
+		min-height: 48px;
+		gap: 6px;
+		padding: 6px 8px !important;
+	}
+
+	.barcode-workspace-title__text {
+		display: none;
+	}
+
+	.barcode-view-toggle {
+		margin-inline-end: auto;
+	}
+
+	.barcode-view-toggle :deep(.v-btn) {
+		min-width: 0;
+		padding-inline: 10px;
+	}
+
+	.barcode-labels-body {
+		padding: 10px !important;
+	}
+
+	.barcode-mobile-setup {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin-bottom: 10px;
+		padding: 8px 10px;
+		border: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.28));
+		border-radius: 12px;
+		background: var(--pos-surface-variant, rgba(148, 163, 184, 0.1));
+	}
+
+	.barcode-mobile-setup__copy {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+
+	.barcode-mobile-setup__eyebrow {
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: rgba(var(--v-theme-on-surface), 0.62);
+	}
+
+	.barcode-mobile-setup__chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.barcode-settings-block {
+		margin-bottom: 8px;
+		padding-bottom: 4px;
+		border-bottom: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.22));
+	}
+
+	.barcode-config-row,
+	.barcode-option-row {
+		row-gap: 2px;
+	}
+
+	.barcode-config-row :deep(.v-col),
+	.barcode-option-row :deep(.v-col) {
+		padding: 4px;
+	}
+
+	.barcode-option-row :deep(.v-checkbox .v-label) {
+		font-size: 0.78rem;
+		line-height: 1.15;
+		white-space: normal;
+	}
+
+	.barcode-template-alert__body {
+		flex-wrap: wrap;
+		row-gap: 6px;
+	}
+
+	.barcode-template-alert__body :deep(.v-btn) {
+		margin-inline-start: 0 !important;
+	}
+
+	.barcode-mobile-queue {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		margin-top: 4px;
+	}
+
+	.barcode-mobile-queue__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+	}
+
+	.barcode-mobile-queue__header > div {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.barcode-mobile-queue__eyebrow {
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: rgba(var(--v-theme-on-surface), 0.62);
+	}
+
+	.barcode-mobile-queue__header strong {
+		font-size: 0.9rem;
+	}
+
+	.barcode-mobile-queue__empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		padding: 28px 16px;
+		border: 1px dashed var(--pos-border-light, rgba(148, 163, 184, 0.4));
+		border-radius: 14px;
+		text-align: center;
+		color: rgba(var(--v-theme-on-surface), 0.7);
+	}
+
+	.barcode-mobile-queue__empty strong {
+		font-size: 0.95rem;
+		color: rgb(var(--v-theme-on-surface));
+	}
+
+	.barcode-mobile-queue__empty span {
+		max-width: 280px;
+		font-size: 0.78rem;
+		line-height: 1.35;
+	}
+
+	.barcode-mobile-queue__list {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 10px;
+	}
+
+	.barcode-queue-card {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		min-width: 0;
+		padding: 10px;
+		border: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.28));
+		border-radius: 14px;
+		background: var(--pos-surface, rgb(var(--v-theme-surface)));
+	}
+
+	.barcode-queue-card__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 6px;
+	}
+
+	.barcode-queue-card__identity {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.barcode-queue-card__identity strong {
+		font-size: 0.86rem;
+		line-height: 1.25;
+		overflow-wrap: anywhere;
+	}
+
+	.barcode-queue-card__identity span {
+		font-size: 0.68rem;
+		color: rgba(var(--v-theme-on-surface), 0.6);
+		overflow-wrap: anywhere;
+	}
+
+	.barcode-queue-card__barcode {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 6px;
+		min-width: 0;
+		padding: 6px 8px;
+		border-radius: 9px;
+		background: rgba(var(--v-theme-primary), 0.07);
+	}
+
+	.barcode-queue-card__barcode-value {
+		flex: 1 1 120px;
+		min-width: 0;
+		font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+		font-size: 0.75rem;
+		overflow-wrap: anywhere;
+	}
+
+	.barcode-queue-card__barcode-select {
+		flex: 1 1 160px;
+		min-width: 0;
+	}
+
+	.barcode-queue-card__fields {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
+		align-items: end;
+	}
+
+	.barcode-queue-card__uom {
+		min-width: 0;
+	}
+
+	.barcode-queue-card__metric {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		min-width: 0;
+	}
+
+	.barcode-queue-card__metric > span {
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: rgba(var(--v-theme-on-surface), 0.6);
+	}
+
+	.barcode-queue-card__metric > strong {
+		font-size: 0.85rem;
+		line-height: 1.2;
+		white-space: nowrap;
+		overflow-wrap: normal;
+		word-break: normal;
+	}
+
+	.barcode-queue-card__metric:not(.barcode-queue-card__metric--qty) {
+		grid-column: 1 / -1;
+		padding: 4px 2px;
+		border-bottom: 1px dashed var(--pos-border-light, rgba(148, 163, 184, 0.25));
+	}
+
+	.barcode-queue-card__metric--qty {
+		grid-column: span 1;
+	}
+
+	.barcode-queue-card__metric--qty .pos-table__qty-counter {
+		width: 100%;
+		max-width: 150px;
+	}
+
+	.barcode-queue-card__weight,
+	.barcode-queue-card__location {
+		grid-column: 1 / -1;
+		min-width: 0;
+	}
+
+	.barcode-queue-card__footer {
+		display: flex;
+		justify-content: flex-end;
+		border-top: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.2));
+		padding-top: 2px;
+	}
+
+	.barcode-mobile-items-bar {
+		display: flex;
+		flex: 0 0 auto;
+		padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+		border-top: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.3));
+		background: var(--pos-surface, rgb(var(--v-theme-surface)));
+	}
+
+	.barcode-mobile-items-bar :deep(.v-btn) {
+		text-transform: none;
+	}
+
+	.barcode-mobile-items-bar__count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 22px;
+		height: 22px;
+		margin-inline-start: 8px;
+		padding-inline: 6px;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		line-height: 1;
+		background: rgba(255, 255, 255, 0.24);
+	}
+
+	.barcode-mobile-printbar {
+		display: grid;
+		flex: 0 0 auto;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 4px;
+		padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+		border-top: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.3));
+		background: var(--pos-surface, rgb(var(--v-theme-surface)));
+	}
+
+	.barcode-mobile-printbar :deep(.v-btn) {
+		min-width: 0;
+		height: 52px;
+		padding: 0 2px;
+		text-transform: none;
+	}
+
+	.barcode-mobile-printbar :deep(.v-btn__content) {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-size: 0.68rem;
+		line-height: 1.1;
+		white-space: nowrap;
+	}
+
+	.barcode-designer-body {
+		flex-direction: column !important;
+		min-height: 0;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.barcode-designer-canvas {
+		flex: 0 0 auto !important;
+		height: 46vh;
+		min-height: 300px;
+	}
+
+	.barcode-designer-panel {
+		width: 100% !important;
+		max-height: 45vh;
+		overflow-y: auto;
+		border-top: 1px solid var(--pos-border-light, rgba(148, 163, 184, 0.3));
+	}
+
+	.barcode-designer-panel :deep(.panel-root) {
+		height: auto !important;
+	}
+
+	.barcode-designer-actions {
+		flex-direction: column !important;
+		align-items: stretch !important;
+	}
+
+	.barcode-designer-actions__group {
+		flex-wrap: wrap;
+	}
+
+	.barcode-designer-actions__group :deep(.v-btn) {
+		flex: 1 1 45%;
+		min-width: 0;
+		text-transform: none;
+	}
+
+	.barcode-preview-card {
+		height: 100dvh;
+		max-height: 100dvh;
+		min-height: 0;
+	}
+
+	.barcode-preview-frame {
+		flex: 1 1 auto;
+		min-height: 0;
+		background: #eef2f7;
+	}
+
+	.barcode-preview-actions {
+		flex: 0 0 auto;
+		flex-wrap: wrap;
+		gap: 8px;
+		padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+	}
+
+	.barcode-dialog-actions {
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.barcode-dialog-actions__start,
+	.barcode-dialog-actions__end {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+
+	.barcode-dialog-actions__end {
+		margin-inline-start: auto;
+	}
+}
+
+@media (max-width: 600px) {
+	.barcode-mobile-header__meta {
+		display: none;
+	}
+
+	.barcode-preview-actions :deep(.v-btn) {
+		flex: 1 1 40%;
+		margin: 0 !important;
+	}
+
+	.barcode-preview-actions :deep(.v-btn:last-child) {
+		flex-basis: 100%;
+	}
 }
 </style>

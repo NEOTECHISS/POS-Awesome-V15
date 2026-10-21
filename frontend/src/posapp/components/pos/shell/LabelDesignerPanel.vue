@@ -247,4 +247,10 @@ const onTextAlignChange = (val: string) => {
 	padding: 0;
 	cursor: pointer;
 }
+
+@media (max-width: 959.98px) {
+	.panel-root {
+		border-left: 0;
+	}
+}
 </style>

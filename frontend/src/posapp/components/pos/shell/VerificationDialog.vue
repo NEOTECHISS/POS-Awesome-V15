@@ -238,6 +238,15 @@ const processScan = async () => {
 	maintainFocus();
 };
 
+watch(
+	() => props.modelValue,
+	(v) => {
+		if (dialog.value !== v) {
+			dialog.value = v;
+		}
+	},
+);
+
 watch(dialog, (v) => {
 	emit("update:modelValue", v);
 	if (v) {
@@ -258,3 +267,22 @@ onUnmounted(() => {
 	if (focusInterval) clearInterval(focusInterval);
 });
 </script>
+
+<style scoped>
+@media (max-width: 600px) {
+	.v-card-text {
+		padding: 12px !important;
+	}
+
+	.v-list-item-title,
+	.v-list-item-subtitle {
+		white-space: normal !important;
+		overflow: visible !important;
+		text-overflow: clip !important;
+	}
+
+	.v-btn-toggle :deep(.v-btn) {
+		padding-inline: 8px;
+	}
+}
+</style>
