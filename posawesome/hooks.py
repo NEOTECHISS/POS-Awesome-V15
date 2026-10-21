@@ -24,6 +24,12 @@ required_apps = ["erpnext"]
 app_include_js = []
 app_include_css = ["/assets/posawesome/css/posawesome.css"]
 
+# Frappe's standalone /printview template does not load app_include_css or
+# web_include_css. The pdf_body_html hook is used by printview (and PDF
+# generation), so append the POS Awesome stylesheet there with media="screen".
+# See posawesome/printview.py.
+pdf_body_html = "posawesome.posawesome.printview.pdf_body_html"
+
 # include js, css files in header of web template
 # web_include_css = "/assets/posawesome/css/posawesome.css"
 # web_include_js = "/assets/posawesome/js/posawesome.js"

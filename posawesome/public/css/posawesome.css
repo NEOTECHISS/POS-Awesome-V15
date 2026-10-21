@@ -1,19 +1,45 @@
-/* Customize the Print button in the print view */
-.action-banner a[onclick="window.print()"] {
-    background-color: var(--primary);
-    color: #fff !important;
-    font-size: 16px;
-    font-weight: 600;
-    padding: 10px 22px;
-    border-radius: 6px;
-    text-decoration: none !important;
-    display: inline-block;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
 
-/* Hover effect */
-.action-banner a[onclick="window.print()"]:hover {
-    filter: brightness(0.9);
+/*
+ * Standard Frappe /printview action bar.
+ *
+ * Loaded on /printview through the pdf_body_html hook
+ * in hooks.py. These styles apply only to the screen.
+ * The invoice layout and printed output remain unchanged.
+ */
+
+@media screen {
+    /* Print and Get PDF buttons */
+    .action-banner a[onclick*="window.print"],
+    .action-banner a[href*="frappe.utils.print_format.download_pdf"] {
+        background-color: var(--primary, #2490ef) !important;
+        color: #fff !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        padding: 12px 28px !important;
+        border-radius: 6px !important;
+        border: 1px solid transparent !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: filter 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+        margin: 0 4px 15px;
+    }
+
+    /* Hover effect for both buttons */
+    .action-banner a[onclick*="window.print"]:hover,
+    .action-banner a[href*="frappe.utils.print_format.download_pdf"]:hover {
+        filter: brightness(0.92);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+    }
+
+    /* Keyboard accessibility for both buttons */
+    .action-banner a[onclick*="window.print"]:focus-visible,
+    .action-banner a[href*="frappe.utils.print_format.download_pdf"]:focus-visible {
+        outline: 3px solid rgba(36, 144, 239, 0.45);
+        outline-offset: 2px;
+    }
 }
